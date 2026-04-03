@@ -41,7 +41,26 @@ const MarketingJobs = () => {
     try {
       const res = await fetch(`${API}/sources`);
       if (!res.ok) throw new Error();
-      setSources(await res.json());
+      const data = await res.json();
+      setSources(data);
+
+      // Clean up stale source states that no longer exist
+      const validKeys = new Set(data.map((s) => s.source));
+      setSourceStates((prev) => {
+        const cleaned = {};
+        let changed = false;
+        for (const [k, v] of Object.entries(prev)) {
+          if (validKeys.has(k)) {
+            cleaned[k] = v;
+          } else {
+            changed = true;
+          }
+        }
+        if (changed) {
+          localStorage.setItem("marketingSourceStates", JSON.stringify(cleaned));
+        }
+        return changed ? cleaned : prev;
+      });
     } catch {
       setSources([]);
     }

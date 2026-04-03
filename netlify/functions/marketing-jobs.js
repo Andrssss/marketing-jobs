@@ -13,12 +13,7 @@ const pool = new Pool({
 
 const ALLOWED_ORIGIN =
   process.env.ALLOWED_ORIGIN || "https://marketing-jobs.netlify.app";
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const RATE_LIMIT_MAX_REQUESTS = 6;
 const MAX_LIMIT = 2000;
-const ipHits = globalThis.__marketingJobsIpHits || new Map();
-
-globalThis.__marketingJobsIpHits = ipHits;
 
 function jsonResponse(statusCode, body, extraHeaders = {}) {
   return {
@@ -30,59 +25,6 @@ function jsonResponse(statusCode, body, extraHeaders = {}) {
     },
     body: JSON.stringify(body),
   };
-}
-
-function getClientIp(event) {
-  const headers = event.headers || {};
-  const forwardedFor =
-    headers["x-forwarded-for"] || headers["X-Forwarded-For"] || "";
-  const netlifyIp =
-    headers["x-nf-client-connection-ip"] ||
-    headers["X-Nf-Client-Connection-Ip"] ||
-    "";
-  const clientIp = headers["client-ip"] || headers["Client-Ip"] || "";
-
-  return (
-    forwardedFor.split(",")[0].trim() ||
-    netlifyIp.trim() ||
-    clientIp.trim() ||
-    "unknown"
-  );
-}
-
-function cleanupOldHits(now) {
-  const minTs = now - RATE_LIMIT_WINDOW_MS;
-
-  for (const [ip, timestamps] of ipHits.entries()) {
-    const fresh = timestamps.filter((ts) => ts > minTs);
-    if (fresh.length === 0) {
-      ipHits.delete(ip);
-    } else {
-      ipHits.set(ip, fresh);
-    }
-  }
-}
-
-function checkRateLimit(ip) {
-  const now = Date.now();
-  const minTs = now - RATE_LIMIT_WINDOW_MS;
-  const timestamps = (ipHits.get(ip) || []).filter((ts) => ts > minTs);
-
-  timestamps.push(now);
-  ipHits.set(ip, timestamps);
-
-  if (ipHits.size > 1000) {
-    cleanupOldHits(now);
-  }
-
-  if (timestamps.length > RATE_LIMIT_MAX_REQUESTS) {
-    return Math.max(
-      1,
-      Math.ceil((timestamps[0] + RATE_LIMIT_WINDOW_MS - now) / 1000)
-    );
-  }
-
-  return 0;
 }
 
 function parseLimit(rawLimit) {
@@ -115,15 +57,6 @@ exports.handler = async (event) => {
 
     if (method !== "GET") {
       return jsonResponse(405, { error: "Nem támogatott HTTP metódus." });
-    }
-
-    const retryAfter = checkRateLimit(getClientIp(event));
-    if (retryAfter > 0) {
-      return jsonResponse(
-        429,
-        { error: "Túl sok kérés. Próbáld újra kicsit később." },
-        { "Retry-After": String(retryAfter) }
-      );
     }
 
     const qs = event.queryStringParameters || {};
