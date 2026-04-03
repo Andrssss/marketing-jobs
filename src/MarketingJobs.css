@@ -55,15 +55,15 @@ html, body {
   font-size: 0.85rem;
   margin-top: 10px;
   padding: 8px 12px;
-  border-left: 3px solid #f59e0b;
-  background: rgba(245, 158, 11, 0.08);
+  border-left: 3px solid #9b8ec4;
+  background: rgba(155, 142, 196, 0.08);
   border-radius: 0 6px 6px 0;
-  color: #fde68a;
+  color: #d4cee8;
 }
 
 .mkt-commits span {
   font-weight: 700;
-  color: #f59e0b;
+  color: #9b8ec4;
   margin-right: 4px;
 }
 
@@ -79,7 +79,7 @@ html, body {
 .mkt-commits-toggle {
   background: none;
   border: none;
-  color: #f59e0b;
+  color: #9b8ec4;
   cursor: pointer;
   font-size: 0.82rem;
   padding: 4px 0;
@@ -134,7 +134,7 @@ html, body {
 .mkt-search {
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1.5px solid #f59e0b;
+  border: 1.5px solid #57524a;
   background: rgba(0, 0, 0, 0.45);
   color: #fff;
   min-width: 200px;
@@ -142,8 +142,8 @@ html, body {
 
 .mkt-search:focus {
   outline: none;
-  border-color: #fbbf24;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+  border-color: #b8aed6;
+  box-shadow: 0 0 0 3px rgba(155, 142, 196, 0.3);
 }
 
 .mkt-search::placeholder {
@@ -174,13 +174,13 @@ html, body {
 }
 
 .mkt-checkbox:has(input:checked) {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: linear-gradient(135deg, #9b8ec4, #7c6daa);
   color: #fff;
   border-color: transparent;
 }
 
 .mkt-checkbox input {
-  accent-color: #f59e0b;
+  accent-color: #9b8ec4;
   width: 18px;
   height: 18px;
 }
@@ -189,8 +189,8 @@ html, body {
   padding: 10px 16px;
   border-radius: 10px;
   border: none;
-  background: linear-gradient(135deg, #f59e0b, #fbbf24);
-  color: #1a1a2e;
+  background: linear-gradient(135deg, #9b8ec4, #b8aed6);
+  color: #fff;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
@@ -198,7 +198,7 @@ html, body {
 
 .mkt-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 6px 16px rgba(155, 142, 196, 0.35);
 }
 
 /* ===== SOURCES TOGGLE ===== */
@@ -207,8 +207,8 @@ html, body {
 }
 
 .mkt-sources-toggle {
-  background: #f59e0b;
-  color: #1a1a2e;
+  background: #9b8ec4;
+  color: #fff;
   border: none;
   border-radius: 6px;
   padding: 6px 12px;
@@ -219,7 +219,7 @@ html, body {
 }
 
 .mkt-sources-toggle:hover {
-  background: #d97706;
+  background: #7c6daa;
   transform: translateY(-1px);
 }
 
@@ -285,8 +285,8 @@ html, body {
 }
 
 .mkt-source-btn.selected {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: #1a1a2e;
+  background: linear-gradient(135deg, #9b8ec4, #7c6daa);
+  color: #fff;
   border-color: transparent;
 }
 
@@ -375,7 +375,7 @@ html, body {
   margin-top: 8px;
   padding: 8px 10px;
   background: #1e1e2e;
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid #9b8ec4;
   font-size: 13px;
   border-radius: 6px;
 }
@@ -408,5 +408,5 @@ html, body {
 .mkt-experience {
   margin-left: 0.5rem;
   font-weight: bold;
-  color: #fbbf24;
+  color: #b8aed6;
 }

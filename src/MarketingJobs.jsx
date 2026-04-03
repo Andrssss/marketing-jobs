@@ -36,23 +36,6 @@ const MarketingJobs = () => {
     return saved !== null ? saved === "true" : true;
   });
 
-  const [lastUpdates, setLastUpdates] = useState([]);
-  const [commitsOpen, setCommitsOpen] = useState(false);
-
-  useEffect(() => {
-    fetch("/.netlify/functions/last-commit")
-      .then((r) => r.json())
-      .then((data) => {
-        if (!Array.isArray(data?.updates)) return;
-        setLastUpdates(
-          data.updates
-            .filter((u) => u?.message && u?.date)
-            .map((u) => ({ message: u.message, date: new Date(u.date) }))
-        );
-      })
-      .catch(() => {});
-  }, []);
-
   /* Fetch */
   const fetchSources = async () => {
     try {
@@ -150,49 +133,6 @@ const MarketingJobs = () => {
             Marketing, irodai asszisztens és adminisztratív pozíciók Budapesten.
             Óránként frissül. Duplikáció mentes.
           </p>
-          <div className="mkt-commits">
-            <span>Elmúlt 1 hét git commitok:</span>
-            {lastUpdates.length > 0 ? (
-              <>
-                <ul>
-                  {lastUpdates.slice(0, 3).map((u, i) => (
-                    <li key={`${u.date.toISOString()}-${i}`}>
-                      {`${u.message} - ${u.date.toLocaleString("hu-HU", {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })}`}
-                    </li>
-                  ))}
-                </ul>
-                {lastUpdates.length > 3 && (
-                  <>
-                    <button
-                      className="mkt-commits-toggle"
-                      onClick={() => setCommitsOpen((prev) => !prev)}
-                    >
-                      {commitsOpen
-                        ? "▲ Régebbiek elrejtése"
-                        : `▼ Még ${lastUpdates.length - 3} commit megjelenítése`}
-                    </button>
-                    {commitsOpen && (
-                      <ul>
-                        {lastUpdates.slice(3).map((u, i) => (
-                          <li key={`${u.date.toISOString()}-${i + 3}`}>
-                            {`${u.message} - ${u.date.toLocaleString("hu-HU", {
-                              dateStyle: "short",
-                              timeStyle: "short",
-                            })}`}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </>
-                )}
-              </>
-            ) : (
-              <div>Nincs frissítés az elmúlt 7 napban.</div>
-            )}
-          </div>
         </div>
 
         <div className="mkt-actions">
