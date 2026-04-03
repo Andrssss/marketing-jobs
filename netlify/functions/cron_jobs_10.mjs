@@ -249,7 +249,7 @@ const SOURCES = [
 
       let items = rawItems.filter(it => {
         if (URL_BLACKLIST.has(normalizeUrl(it.url))) return false;
-        if (p.key === "karrierhungaria" && !it.url.startsWith(KARRIERHUNGARIA_JOB_PREFIX)) return false;
+        if (p.key === "karrierhungaria" && !/^https:\/\/karrierhungaria\.hu\/allasajanlat\/\d/.test(it.url)) return false;
         if (!levelNotBlacklisted(it.title, it.description)) return false;
         if (!titleNotBlacklisted(it.title)) return false;
         return true;
