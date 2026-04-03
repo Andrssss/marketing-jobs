@@ -42,9 +42,9 @@ function normalizeWhitespace(s) {
 
 function titleNotBlacklisted(title) {
   const TITLE_BLACKLIST = [
-    "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
+     "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
     "lead", "expert", "vezető fejlesztő", "tech lead",
-    "igazgató", "vezető"
+    "igazgató", "vezető", "hostess", "head"
   ];
   const t = normalizeText(title);
   return !TITLE_BLACKLIST.some((word) => t.includes(normalizeText(word)));

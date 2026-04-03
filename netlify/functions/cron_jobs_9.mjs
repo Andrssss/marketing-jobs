@@ -38,11 +38,9 @@ function normalizeText(s) {
 
 function titleNotBlacklisted(title) {
   const TITLE_BLACKLIST = [
-  "architect",
-  "expert",
-  "vezető fejlesztő",
-  "tech lead",
-  "igazgató", "vezető"
+  "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
+    "lead", "expert", "vezető fejlesztő", "tech lead",
+    "igazgató", "vezető", "hostess", "head"
   ];
   const t = normalizeText(title);
   return !TITLE_BLACKLIST.some(word => t.includes(normalizeText(word)));
