@@ -1,6 +1,6 @@
-export const config = {
-  schedule: "9 4-23 * * *",
-};
+// export const config = {
+//   schedule: "9 4-23 * * *",
+// };
 
 /* ========================= PAGE 1-3 ONLY
 const FRISSDIPLOMAS_JOB_PREFIX = "https://www.frissdiplomas.hu/allasok";

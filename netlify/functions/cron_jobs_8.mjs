@@ -1,8 +1,8 @@
 // netlify/functions/cron_jobs_8.mjs
-console.log("CRON_JOBS_8 LOADED");
-export const config = {
-  schedule: "6 4-23 * * *",
-};
+// console.log("CRON_JOBS_8 LOADED");
+// export const config = {
+//   schedule: "6 4-23 * * *",
+// };
 
 /* ========================= keywords=teszt
   { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/tesztelo-tesztmernok/budapest/1,10,23,0,80" },

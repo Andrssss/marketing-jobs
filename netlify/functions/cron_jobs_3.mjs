@@ -1,6 +1,6 @@
-export const config = {
-  schedule: "3 4-23 * * *",
-};
+// export const config = {
+//   schedule: "3 4-23 * * *",
+// };
 /* =========================
   { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=1&f_TPR=r604800&keywords=developer&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
 */

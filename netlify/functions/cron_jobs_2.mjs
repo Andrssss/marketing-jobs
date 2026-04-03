@@ -1,8 +1,8 @@
 // netlify/functions/cron_jobs_2.mjs
-console.log("CRON_JOBS LOADED");
-export const config = {
-  schedule: "2 4-23 * * *",
-};
+// console.log("CRON_JOBS LOADED");
+// export const config = {
+//   schedule: "2 4-23 * * *",
+// };
 
 /* =========================
 const SOURCES = [

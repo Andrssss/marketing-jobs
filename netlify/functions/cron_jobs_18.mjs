@@ -1,6 +1,6 @@
-export const config = {
-  schedule: "15 4-23 * * *",
-};
+// export const config = {
+//   schedule: "15 4-23 * * *",
+// };
 
 /* =========================
   "https://hu.talent.com,
