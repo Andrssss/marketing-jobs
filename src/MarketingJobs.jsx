@@ -226,7 +226,7 @@ const MarketingJobs = () => {
 
       {/* Job list */}
       {loading ? (
-        <div className="mkt-status">Betöltés…</div>
+        <div className="mkt-status">Betöltés.…</div>
       ) : visibleJobs.length === 0 ? (
         <div className="mkt-status">Nincs találat.</div>
       ) : (
