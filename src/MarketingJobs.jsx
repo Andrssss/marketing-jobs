@@ -152,6 +152,13 @@ const MarketingJobs = () => {
             Marketing, irodai asszisztens és adminisztratív pozíciók Budapesten.
             Óránként frissül. Duplikáció mentes.
           </p>
+          <input
+            className="mkt-search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Keresés…"
+            style={{ width: "100%", marginTop: 8 }}
+          />
         </div>
 
         <div className="mkt-actions">
@@ -192,15 +199,6 @@ const MarketingJobs = () => {
           </button>
         </div>
       </header>
-
-      {/* Search */}
-      <input
-        className="mkt-search"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Keresés…"
-        style={{ width: "100%", marginBottom: 8 }}
-      />
 
       {/* Sources */}
       <div className="mkt-sources-header">
