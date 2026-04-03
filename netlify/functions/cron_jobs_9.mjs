@@ -206,7 +206,7 @@ async function upsertJob(client, source, item) {
      WHERE NOT EXISTS (
        SELECT 1 FROM marketing_job_posts WHERE source = $1 AND url = $3
      )
-     ON CONFLICT (source, url)
+     ON CONFLICT (source, url) WHERE url IS NOT NULL
         DO NOTHING;`,
     [source, item.title, canonicalUrl, experience]
   );

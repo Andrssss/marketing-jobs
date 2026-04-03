@@ -161,7 +161,7 @@ async function upsertJob(client, source, item) {
     `INSERT INTO marketing_job_posts
       (source, title, url, experience, first_seen)
      VALUES ($1,$2,$3,$4,NOW())
-     ON CONFLICT (source, url)
+     ON CONFLICT (source, url) WHERE url IS NOT NULL
         DO NOTHING;`,
     [source, item.title, item.url, experience]
   );
