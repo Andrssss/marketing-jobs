@@ -133,7 +133,7 @@ export default async () => {
          AND (experience IS NULL OR experience = '-')
          AND source = ANY($1::text[])
        ORDER BY first_seen DESC
-       LIMIT 300`,
+       LIMIT 2000`,
       [ENRICH_SOURCES]
     );
 

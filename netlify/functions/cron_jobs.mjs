@@ -133,7 +133,8 @@ const SOURCES = [
 const TITLE_BLACKLIST = [
   "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
     "lead", "expert", "vezető fejlesztő", "tech lead",
-    "igazgató", "vezető"
+    "igazgató", "vezető",
+    "mérnök", "mernok", "engineer", "developer", "software", "prompt", "elektrotechnikus", "qa"
 ];
 
 

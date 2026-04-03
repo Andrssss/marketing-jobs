@@ -216,7 +216,7 @@ export default async () => {
            AND (experience IS NULL OR experience = '-')
            AND ${pipe.sourceFilter}
          ORDER BY first_seen DESC
-         LIMIT 300`
+         LIMIT 2000`
       );
 
       console.log(`[${pipe.label}] ${rows.length} rows to enrich`);

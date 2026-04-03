@@ -233,7 +233,8 @@ function levelNotBlacklisted(title, desc) {
     "experienced", "expertise",
     "gyakornok", "intern", "internship", "trainee", "traineeship",
     "diákmunka", "diakmunka",
-    "igazgató", "vezető"
+    "igazgató", "vezető",
+    "mérnök", "mernok", "engineer", "developer", "software", "prompt", "elektrotechnikus", "qa"
   ];
   const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
   return !LEVEL_BLACKLIST.some((kw) => combined.includes(normalizeText(kw)));
