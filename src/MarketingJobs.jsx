@@ -136,6 +136,7 @@ const MarketingJobs = () => {
         </div>
 
         <div className="mkt-actions">
+          <a href="/filters" className="mkt-btn" style={{ textDecoration: "none" }}>⚙ Filters</a>
           <input
             className="mkt-search"
             value={q}

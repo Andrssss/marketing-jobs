@@ -285,7 +285,7 @@ html, body {
 }
 
 .mkt-source-btn.selected {
-  background: #00d312;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
   color: #fff;
   border-color: transparent;
 }

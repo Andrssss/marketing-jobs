@@ -5,7 +5,6 @@ export const config = {
 /* =========================
   DreamJobs: category=52 (Marketing, PR), location=2925 (Budapest)
   MelonJobs: job-categories=91 (Adminisztrátor, Dokumentumkezelő), 196 (Marketing, Média, PR vezető)
-  KUKA: Marketing+Communication & Administration, Budapest
 */
 
 
@@ -31,11 +30,6 @@ const DREAMJOBS_API_URLS = [
 
 const MELONJOBS_API_URL =
   "https://melonjobs.hu/wp-json/wp/v2/job-listings?job-categories=91,196&per_page=100&page=1";
-
-const KUKA_API_URLS = [
-  "https://jobs.kuka.com/tile-search-results/?q=&locationsearch=Budapest&optionsFacetsDD_department=Marketing+and+Communication",
-  "https://jobs.kuka.com/tile-search-results/?q=&locationsearch=Budapest&optionsFacetsDD_department=Administration",
-];
 
 /* ── shared helpers ─────────────────────────────────────────── */
 
@@ -307,118 +301,6 @@ async function fetchAllMelonJobs() {
   return jobs;
 }
 
-/* ── KUKA ───────────────────────────────────────────────────── */
-
-function inferKukaExperience(title) {
-  const normalized = normalizeText(title);
-  if (SENIOR_KEYWORDS.some((kw) => normalized.includes(normalizeText(kw))))
-    return "senior";
-  if (/\bmedior\b|\bmid\b/.test(normalized)) return "medior";
-  if (/\bjunior\b|\bpalyakezdo\b|\bentry.?level\b|\btrainee\b|\bintern\b|\bgyakornok\b/.test(normalized))
-    return "junior";
-  return null;
-}
-
-function extractKukaJobs(html) {
-  const $ = cheerioLoad(html);
-  const jobs = [];
-  const seen = new Set();
-
-  $("li[data-url]").each((_i, el) => {
-    const $el = $(el);
-    const path = $el.attr("data-url");
-    if (!path) return;
-
-    const url = normalizeUrl(`https://jobs.kuka.com${path.replace(/&amp;/g, "&")}`);
-    if (seen.has(url)) return;
-    seen.add(url);
-
-    const title = normalizeWhitespace(
-      $el.find(".jobTitle-link").first().text() ||
-        $el.find(".title a").first().text() ||
-        $el.find("a[href]").first().text()
-    );
-    if (!title) return;
-
-    jobs.push({
-      title,
-      url,
-      experience: inferKukaExperience(title),
-    });
-  });
-
-  return jobs;
-}
-
-function extractKukaYearExperience(html) {
-  const idx = html.indexOf("What you need to succeed");
-  if (idx === -1) return null;
-
-  const section = html.substring(idx, idx + 3000);
-  const $ = cheerioLoad(section);
-  const text = $.text();
-
-  const patterns = [
-    /\b\d+\s?\+?\s?(?:év|years?|éves|yrs?)\b/gi,
-    /\b\d+\s?[-–]\s?\d+\s?(?:év|years?|éves|yrs?)\b/gi,
-    /\bseveral\s+years?\b/gi,
-    /\bminimum\s?\d+\s?(?:év|years?)\b/gi,
-    /\bat\s+least\s+\d+\s?(?:years?|év)\b/gi,
-  ];
-
-  const matches = [];
-  for (const regex of patterns) {
-    const found = text.match(regex);
-    if (found) matches.push(...found);
-  }
-
-  if (matches.length === 0) return null;
-
-  const maxReasonable = 15;
-  const filtered = matches.filter((m) => {
-    const nums = m.match(/\d+/g)?.map((n) => parseInt(n, 10)) || [];
-    return nums.length === 0 || nums.every((n) => n <= maxReasonable);
-  });
-
-  if (filtered.length === 0) return null;
-
-  return [...new Set(
-    filtered.map((m) => m.replace(/\s+/g, " ").trim().toLowerCase())
-  )].join(", ");
-}
-
-async function fetchAllKukaJobs() {
-  const jobs = [];
-  const seen = new Set();
-
-  for (const apiUrl of KUKA_API_URLS) {
-    const html = await fetchText(apiUrl);
-    for (const job of extractKukaJobs(html)) {
-      if (!seen.has(job.url)) {
-        seen.add(job.url);
-        jobs.push(job);
-      }
-    }
-  }
-
-  for (let i = 0; i < jobs.length; i++) {
-    const job = jobs[i];
-    try {
-      const jobHtml = await fetchText(job.url);
-      const yearExp = extractKukaYearExperience(jobHtml);
-      if (yearExp) {
-        console.log(`kuka: ${job.title} → experience from page: ${yearExp}`);
-        job.experience = yearExp;
-      }
-    } catch (err) {
-      console.log(`kuka: failed to fetch detail for ${job.title}: ${err.message}`);
-    }
-    if (i < jobs.length - 1) await sleep(500);
-  }
-
-  return jobs;
-}
-
 /* ── handler ────────────────────────────────────────────────── */
 
 export default async () => {
@@ -445,15 +327,6 @@ export default async () => {
       await upsertJob(client, "melonjobs", job);
     }
     console.log(`melonjobs: ${melonJobs.length} jobs processed`);
-
-    /* KUKA */
-    const kukaJobs = (await fetchAllKukaJobs()).filter((job) => !isSeniorLike(job.title, ""));
-    console.log(`kuka: ${kukaJobs.length} jobs found`);
-
-    for (const job of kukaJobs) {
-      await upsertJob(client, "kuka", job);
-    }
-    console.log(`kuka: ${kukaJobs.length} jobs processed`);
 
     return new Response("OK");
   } finally {
