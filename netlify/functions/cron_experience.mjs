@@ -1,5 +1,5 @@
 export const config = {
-  schedule: "17 4-23 * * *",
+  schedule: "15 4-23 * * *",
 };
 
 /* =========================
@@ -38,15 +38,6 @@ function normalizeText(s) {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
-}
-
-const INTERNSHIP_KEYWORDS = [
-  "gyakornok", "intern", "internship", "trainee",
-  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
-];
-function isInternshipTitle(title) {
-  const t = normalizeText(title);
-  return INTERNSHIP_KEYWORDS.some(k => t.includes(k));
 }
 
 function sleep(ms) {
@@ -220,7 +211,7 @@ export default async () => {
     for (const pipe of PIPELINES) {
       const { rows } = await client.query(
         `SELECT id, url, title
-         FROM job_posts
+         FROM marketing_job_posts
          WHERE first_seen >= NOW() - INTERVAL '${pipe.interval}'
            AND (experience IS NULL OR experience = '-')
            AND ${pipe.sourceFilter}
@@ -238,10 +229,8 @@ export default async () => {
           const html = await fetchText(row.url);
           let experience = pipe.extract(html);
 
-          if (isInternshipTitle(row.title)) experience = "diákmunka";
-
           await client.query(
-            `UPDATE job_posts SET experience = $1 WHERE id = $2`,
+            `UPDATE marketing_job_posts SET experience = $1 WHERE id = $2`,
             [experience || "-", row.id]
           );
 

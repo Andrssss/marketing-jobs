@@ -1,6 +1,6 @@
-// export const config = {
-//   schedule: "7 4-23 * * *",
-// };
+export const config = {
+  schedule: "6 4-23 * * *",
+};
 
 /* ========================= keywords=teszt
       { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r86400&keywords=teszt&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
@@ -35,33 +35,14 @@ function normalizeText(s) {
     .toLowerCase();
 }
 
-const INTERNSHIP_KEYWORDS = [
-  "gyakornok", "intern", "internship", "trainee",
-  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
-];
-function isInternshipTitle(title) {
-  const t = normalizeText(title);
-  return INTERNSHIP_KEYWORDS.some(k => t.includes(k));
-}
-
 
 function titleNotBlacklisted(title) {
   const TITLE_BLACKLIST = [
-    "marketing","sales","hr","finance","pénzügy","könyvelő",
-    "accountant","manager","vezető","director","adminisztráció",
-    "asszisztens","ügyfélszolgálat","customer service","call center",
-    "értékesítő","bizto sítás","tanácsadó","biztosítás",
-    "Adótanácsadó","Auditor","Accountant","Accounts","Tanácsadó",
-     "senior",
-    "szenior",
-    "medior",
-  "lead",
-  "principal",
-  "staff",
   "architect",
   "expert",
   "vezető fejlesztő",
-  "tech lead"
+  "tech lead",
+  "igazgató", "vezető"
   ];
   const t = normalizeText(title);
   return !TITLE_BLACKLIST.some(word => t.includes(normalizeText(word)));
@@ -78,132 +59,6 @@ function dedupeByUrl(items) {
   });
 }
 
-function matchesKeywords(title, desc) {
-  const KEYWORDS_STRONG = [
-  "gyakornok",
-  "intern",
-  "internship",
-  "trainee",
-  "junior",
-  "developer",
-  "fejlesztő",
-  "fejleszto",
-  "szoftverfejleszto",
-  "engineer",
-  "software",
-  "data",
-  "analyst",
-  "scientist",
-  "automation",
-  "java",
-  "python",
-  "javascript",
-  "php",
-  "c++",
-  "nodejs",
-  "database",
-  "test",
-  "teszt",
-  "testing",
-  "teszteles",
-  "tesztelés",
-  "web",
-  "weboldal",
-  "net",
-  "node",
-  "typescript",
-  "sql",
-  "frontend",
-  "backend",
-  "fullstack",
-  "full-stack",
-  "webfejleszto",
-  "webfejlesztő",
-  "react",
-  "angular",
-  "devops",
-  "cloud",
-  "infrastructure",
-  "platform",
-  "platforms",
-  "service",
-  "services",
-  "helpdesk",
-  "security",
-  "biztonsag",
-  "biztonsagi",
-  "biztonsági",
-  "biztonsagtechnikai",
-  "biztonságtechnikai",
-  "kiberbiztonsag",
-  "kiberbiztonsági",
-  "kiberbiztonság",
-  "rendszermernok",
-  "rendszermérnök",
-  "uzemeltetes",
-  "uzemeltetesi",
-  "üzemeltetés",
-  "üzemeltetési",
-  "penzugy",
-  "pénzügy",
-  "penzugyi",
-  "pénzügyi",
-  "digitalis",
-  "digitális",
-  "power",
-  "application",
-  "system",
-  "systems",
-  "engineering",
-  "development",
-  "program",
-  "programozo",
-  "integration",
-  "technical",
-  "quality",
-  "servicenow",
-  "linux",
-  "android",
-  "databricks",
-  "abap",
-  "sap",
-  "informatikai",
-  "informatika",
-  "rendszer",
-  "rendszergazda",
-  "rendszeruzemelteto",
-  "rendszeruzemeltető",
-  "uzemelteto",
-  "üzemeltető",
-  "szoftvertesztelo",
-  "szoftvertesztelő",
-  "manual",
-  "embedded",
-  "systemtest",
-  "tesztrendszer",
-  "applications",
-  "graduate",
-  "graduates",
-  "tesztelo",
-  "support",
-  "operations",
-  "qa",
-  "tester",
-  "sysadmin",
-  "network",
-  "jog",
-  "jogi",
-
-];
-  const n = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-  const strongHit = KEYWORDS_STRONG.some(k => n.includes(normalizeText(k)));
-  const itHit = /\bit\b/i.test(n);
-  const aiHit = /\bai\b/i.test(n);
-  return strongHit || (
-    (itHit || aiHit) &&
-    /support|sysadmin|network|qa|tester|developer|data|analyst|operations|security|biztonsag|tanacsado|consultant|engineer|fejleszto|fejlesztő/.test(n)
-  );
-}
 
 /* =====================
    URL helpers
@@ -342,19 +197,18 @@ async function upsertJob(client, source, item) {
     source === "LinkedIn"
       ? canonicalizeLinkedInJobUrl(item.url)
       : item.url;
-  const experience = isInternshipTitle(item.title) ? "diákmunka" : "-";
+  const experience = "-";
 
   await client.query(
-    `INSERT INTO job_posts
-      (source, title, url, canonical_url, experience, first_seen)
-     SELECT $1,$2,$3,$4,$5,NOW()
+    `INSERT INTO marketing_job_posts
+      (source, title, url, experience, first_seen)
+     SELECT $1,$2,$3,$4,NOW()
      WHERE NOT EXISTS (
-       SELECT 1 FROM job_posts WHERE source = $1 AND canonical_url = $4
+       SELECT 1 FROM marketing_job_posts WHERE source = $1 AND url = $3
      )
      ON CONFLICT (source, url)
-        DO NOTHING;
-        `,
-    [source, item.title, item.url, canonicalUrl, experience]
+        DO NOTHING;`,
+    [source, item.title, canonicalUrl, experience]
   );
 }
 
@@ -362,17 +216,16 @@ function levelNotBlacklisted(title, desc) {
   const LEVEL_BLACKLIST = [
     "medior", "senior", "lead", "principal", "expert",
     "staff", "architect", "sr.", "sr ", "sen.",
-    "experienced", "expertise"
+    "experienced", "expertise",
+    "gyakornok", "intern", "internship", "trainee", "traineeship",
+    "diákmunka", "diakmunka",
+    "igazgató", "vezető"
   ];
-  const t = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-  return !LEVEL_BLACKLIST.some(w => t.includes(normalizeText(w)));
+  const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
+  return !LEVEL_BLACKLIST.some((kw) => combined.includes(normalizeText(kw)));
 }
 
 export default async () => {
-  
-
-
-
 const SOURCES = [
     // TEST
     { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&f_TPR=r86400&keywords=test&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
@@ -427,7 +280,6 @@ const SOURCES = [
 
       let items = rawItems.filter(it => {
         const needKeywords = p.key === "LinkedIn";
-        if (needKeywords && !matchesKeywords(it.title, it.description)) return false;
         if (!levelNotBlacklisted(it.title, it.description)) return false;
         if (!titleNotBlacklisted(it.title)) return false;
         return true;

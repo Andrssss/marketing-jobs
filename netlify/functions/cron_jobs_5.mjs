@@ -1,14 +1,11 @@
-// netlify/functions/cron_jobs_2.mjs
-// console.log("CRON_JOBS LOADED");
-// export const config = {
-//   schedule: "2 4-23 * * *",
-// };
+// netlify/functions/cron_jobs_8.mjs
+// console.log("CRON_JOBS_8 LOADED");
+export const config = {
+  schedule: "3 4-23 * * *",
+};
 
-/* =========================
-const SOURCES = [
-  { key: "cvcentrum-gyakornok-it", label: "CV Centrum – gyakornok IT", url: "https://cvcentrum.hu/?s=intern&category%5B%5D=information-technology&category%5B%5D=it&category%5B%5D=it-programozas&category%5B%5D=it-uzemeltetes&category%5B%5D=networking&type=&_noo_job_field_year_experience=&post_type=noo_job" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/it-programozas-fejlesztes/budapest/1,10,23,intern" },
-  ];
+/* ========================= keywords=teszt
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/tesztelo-tesztmernok/budapest/1,10,23,0,80" },
 */
 
 
@@ -91,12 +88,6 @@ function normalizeUrl(raw) {
   "keyword"
 ].forEach((p) => u.searchParams.delete(p));
 
-    // =========================
-    // CV Centrum: strip numeric suffix like -2-2 and -3 at the end
-    // =========================
-    if (u.hostname.includes("cvcentrum.hu") && /^\/allasok\/.*-\d+-\d+\/?$/.test(u.pathname)) {
-      u.pathname = u.pathname.replace(/-\d+(-\d+)?\/?$/, "");    
-    }
 
     return u.toString().replace(/\?$/, "");
   } catch {
@@ -111,15 +102,6 @@ function absolutize(href, base) {
   } catch {
     return null;
   }
-}
-
-function mergeCandidates(...lists) {
-  // flatten + dedupe URL alapján
-  const merged = [];
-  for (const arr of lists) {
-    if (Array.isArray(arr)) merged.push(...arr);
-  }
-  return dedupeByUrl(merged);
 }
 
 
@@ -139,282 +121,57 @@ function dedupeByUrl(items) {
 // Sources (csak az első 4 debugolásra)
 // =====================
 const SOURCES = [
-    { key: "cvcentrum-gyakornok-it", label: "CV Centrum – gyakornok IT", url: "https://cvcentrum.hu/?s=intern&category%5B%5D=information-technology&category%5B%5D=it&category%5B%5D=it-programozas&category%5B%5D=it-uzemeltetes&category%5B%5D=networking&type=&_noo_job_field_year_experience=&post_type=noo_job" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/it-programozas-fejlesztes/budapest/1,10,23,intern" },
-  ];
-
-// =====================
-// Keywords
-// =====================
-export const KEYWORDS_STRONG = [
-  "gyakornok",
-  "intern",
-  "internship",
-  "trainee",
-  "junior",
-  "developer",
-  "fejlesztő",
-  "fejleszto",
-  "szoftverfejleszto",
-  "engineer",
-  "software",
-  "data",
-  "analyst",
-  "scientist",
-  "automation",
-  "java",
-  "python",
-  "javascript",
-  "php",
-  "c++",
-  "nodejs",
-  "database",
-  "test",
-  "teszt",
-  "testing",
-  "teszteles",
-  "tesztelés",
-  "web",
-  "weboldal",
-  "net",
-  "node",
-  "typescript",
-  "sql",
-  "frontend",
-  "backend",
-  "fullstack",
-  "full-stack",
-  "webfejleszto",
-  "webfejlesztő",
-  "react",
-  "angular",
-  "devops",
-  "cloud",
-  "infrastructure",
-  "platform",
-  "platforms",
-  "service",
-  "services",
-  "helpdesk",
-  "security",
-  "biztonsag",
-  "biztonsagi",
-  "biztonsági",
-  "biztonsagtechnikai",
-  "biztonságtechnikai",
-  "kiberbiztonsag",
-  "kiberbiztonsági",
-  "kiberbiztonság",
-  "rendszermernok",
-  "rendszermérnök",
-  "uzemeltetes",
-  "uzemeltetesi",
-  "üzemeltetés",
-  "üzemeltetési",
-  "penzugy",
-  "pénzügy",
-  "penzugyi",
-  "pénzügyi",
-  "digitalis",
-  "digitális",
-  "power",
-  "application",
-  "system",
-  "systems",
-  "engineering",
-  "development",
-  "program",
-  "programozo",
-  "integration",
-  "technical",
-  "quality",
-  "servicenow",
-  "linux",
-  "android",
-  "databricks",
-  "abap",
-  "sap",
-  "informatikai",
-  "informatika",
-  "rendszer",
-  "rendszergazda",
-  "rendszeruzemelteto",
-  "rendszeruzemeltető",
-  "uzemelteto",
-  "üzemeltető",
-  "szoftvertesztelo",
-  "szoftvertesztelő",
-  "manual",
-  "embedded",
-  "systemtest",
-  "tesztrendszer",
-  "applications",
-  "graduate",
-  "graduates",
-  "tesztelo",
-  "support",
-  "operations",
-  "qa",
-  "tester",
-  "sysadmin",
-  "network",
-  "jog",
-  "jogi",
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/marketing-media-pr/budapest/1,12,23,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,marketing,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,5,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,marketing%20asszisztens,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,marketing%20asszisztens,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20brand%20manager,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,irodai%20adminisztr%c3%a1tor,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,irodai%20adminisztr%c3%a1tor,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,irodai%20asszisztens,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,irodai%20asszisztens,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,irodai%20munkat%c3%a1rs,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,irodai%20munkat%c3%a1rs,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,irodai%20%c3%bcgyint%c3%a9z%c5%91,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,irodai%20%c3%bcgyint%c3%a9z%c5%91,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,piackutat%c3%b3%401%401?keywordsearch" },
+  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,piackutat%c3%a1si%20elemz%c5%91%401%401?keywordsearch" },
 ];
-
 
 
 const SENIOR_KEYWORDS = [
   "senior",
-    "szenior",
-    "medior",
+  "szenior",
+  "medior",
   "lead",
   "principal",
   "staff",
   "architect",
   "expert",
   "vezető fejlesztő",
-  "tech lead"
+  "tech lead",
+  "gyakornok",
+  "intern",
+  "internship",
+  "trainee",
+  "diákmunka",
+  "diakmunka",
+  "igazgató",
+  "vezető",
 ];
 
-const INTERNSHIP_KEYWORDS = [
-  "gyakornok", "intern", "internship", "trainee",
-  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
-];
-
-function isInternshipTitle(title) {
-  const n = normalizeText(title ?? "");
-  return INTERNSHIP_KEYWORDS.some(k => n.includes(k));
-}
-
-function hasWord(n, w) {
-  // szóhatár: it ne találjon bele más szavakba
-  const re = new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-  return re.test(n);
-}
 
 
 
 
-
-function matchesKeywords(title, desc) {
-  const n = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-
-  const strongHit = KEYWORDS_STRONG.some(k => n.includes(normalizeText(k)));
-  const itHit = hasWord(n, "it"); // csak külön szóként
-  const aiHit = hasWord(n, "ai"); // csak külön szóként
-
-  // szabály:
-  // - ha van strongHit → ok
-  // - ha csak "it" vagy "ai" van, az NEM elég (különben túl sok false positive)
-  return strongHit || ((itHit || aiHit) && /support|sysadmin|network|qa|tester|developer|data|analyst|operations|security|biztonsag|tanacsado|consultant|engineer|fejleszto|fejlesztő/.test(n));
-}
 
 function isSeniorLike(title = "", desc = "") {
   const n = normalizeText(`${title} ${desc}`);
   return SENIOR_KEYWORDS.some(k => n.includes(normalizeText(k)));
-}
-
-
-function extractSSR(html, baseUrl) {
-  const $ = cheerioLoad(html);
-  const items = [];
-
-  // Tipikus "kártya" konténerek / list item-ek
-  const CARD_SELECTORS = [
-    "app-job-list-item",
-    "article",
-    "li",
-    ".job",
-    ".job-list-item",
-    ".position",
-    ".listing",
-    ".card",
-    ".item",
-    ".vacancy",
-    ".vacancies__item",
-    "[data-href]",
-    "[data-url]",
-    "[onclick]",
-    "[role='link']",
-    "[routerlink]",
-  ].join(",");
-
-  $(CARD_SELECTORS).each((_, el) => {
-    const $card = $(el);
-
-    // 1) link kinyerés: data-href/data-url/routerlink/onclick/benne lévő a[href]
-    let href =
-      $card.attr("data-href") ||
-      $card.attr("data-url") ||
-      $card.attr("routerlink") ||
-      null;
-
-    if (!href) {
-      // onclick="location.href='...'" / window.location='...'
-      const oc = $card.attr("onclick") || "";
-      const m = oc.match(/(?:location\.href|window\.location)\s*=\s*['"]([^'"]+)['"]/i)
-        || oc.match(/['"]([^'"]+)['"]/); // fallback: első string
-      if (m && m[1]) href = m[1];
-    }
-
-    if (!href) {
-      // ha nincs "kártya link", akkor nézzük a kártyán belüli legjobb linket
-      const a = $card.find("a[href]").first();
-      href = a.attr("href") || null;
-    }
-
-    const url = href ? absolutize(href, baseUrl) : null;
-    if (!url) return;
-    if (!/^https?:\/\//i.test(url)) return;
-    if (/\.(jpg|jpeg|png|gif|svg|webp|pdf|zip|rar|7z)(\?|#|$)/i.test(url)) return;
-
-    // 2) cím kinyerés: heading > erős szöveg > valami rövidebb text
-    let title =
-      normalizeWhitespace($card.find("h1,h2,h3,h4,h5,h6").first().text()) ||
-      normalizeWhitespace($card.find(".title,.job-title,.position-title,.name").first().text()) ||
-      normalizeWhitespace($card.find("strong").first().text()) ||
-      null;
-
-    if (!title || title.length < 4) {
-      // ha nincs jó title, próbáljuk a link szövegét (de CTA-nál ez rossz, ezért CTA szűrés)
-      const aText = normalizeWhitespace($card.find("a[href]").first().text());
-      if (aText && !isCtaTitle(aText)) title = aText;
-    }
-
-    title = normalizeWhitespace(title);
-    if (!title || title.length < 4) return;
-    if (isCtaTitle(title)) return; // “Megnézem / Részletek” ne legyen cím
-
-    // 3) leírás (opcionális)
-    const desc =
-      normalizeWhitespace($card.find("p").first().text()) ||
-      normalizeWhitespace($card.find(".description,.job-desc,.job-description").first().text()) ||
-      null;
-
-    items.push({
-      title: title.slice(0, 300),
-      url,
-      description: desc ? desc.slice(0, 800) : null,
-    });
-  });
-
-  return dedupeByUrl(items);
-}
-
-
-
-
-function keywordHit(title, desc) {
-  const n = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-
-  const hits = [];
-  if (hasWord(n, "it")) hits.push("it"); // szóhatáros
-  for (const k of KEYWORDS_STRONG) {
-    const nk = normalizeText(k);
-    if (nk !== "it" && n.includes(nk)) hits.push(k);
-  }
-  return hits;
 }
 
 
@@ -447,11 +204,6 @@ function looksLikeJobUrl(sourceKey, url) {
     return ok;
   }
 
-  // CVCentrum
-  if (sourceKey.startsWith("cvcentrum")) {
-    if (!/^\/allasok\/[^\/]+\/?$/.test(u.pathname)) return false;
-  }
-  return true;
 }
 
 // =====================
@@ -594,7 +346,7 @@ async function upsertJob(client, source, item) {
   const experience = item.experience ?? extractExperience(item.description);
 
   await client.query(
-    `INSERT INTO job_posts
+    `INSERT INTO marketing_job_posts
       (source, title, url, experience, first_seen)
      VALUES ($1,$2,$3,$4,NOW())
      ON CONFLICT (source, url)
@@ -674,21 +426,14 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       // =========================
       // MERGE JOBS
       // =========================
-      let merged = [];
 
-       
-        let generic = extractCandidates(html, p.url).filter((c) => looksLikeJobUrl(source, c.url));
-        let ssr = extractSSR(html, p.url).filter((c) => looksLikeJobUrl(source, c.url));
+      let merged = extractCandidates(html, p.url).filter((c) => looksLikeJobUrl(source, c.url));
 
-        merged = mergeCandidates(generic, ssr);
-
-      
 
       // =========================
       // FILTER & KEYWORD MATCH
       // =========================
       let matchedList = merged
-        .filter((c) => matchesKeywords(c.title, c.description))
         .filter((c) => !isSeniorLike(c.title, c.description));
 
 
@@ -709,7 +454,6 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
         matchedList = matchedList.filter(c => !BLACKLIST_URLS.includes(c.url));
       }
 
-
       const BLACKLIST_WORDS = ["marketing", "sales", "oktatásfejlesztő", "support"];
       matchedList = matchedList.filter(item => {
         const text = `${item.title ?? ""} ${item.description ?? ""}`.toLowerCase();
@@ -720,22 +464,6 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       // DEBUG REJECTED
       // =========================
       let rejected = [];
-      if (debug) {
-        rejected = merged
-          .filter((c) => !matchesKeywords(c.title, c.description))
-          .slice(0, 30)
-          .map((c) => {
-            const norm = normalizeText(`${c.title ?? ""} ${c.description ?? ""}`);
-            return {
-              title: c.title,
-              url: c.url,
-              hits: keywordHit(c.title, c.description),
-              normPreview: norm.slice(0, 220),
-              itWord: hasWord(norm, "it"),
-              hasStrong: KEYWORDS_STRONG.some((k) => norm.includes(normalizeText(k))),
-            };
-          });
-      }
 
       stats.portals.push({ source, label: p.label, url: p.url, ok: true, matched: matchedList.length, rejected });
 
@@ -744,7 +472,6 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       // =========================
       if (write && client) {
         for (const item of matchedList) {
-          if (isInternshipTitle(item.title)) item.experience = "diákmunka";
           await upsertJob(client, source, item);
         }
       }

@@ -1,10 +1,9 @@
-// export const config = {
-//   schedule: "8 4-23 * * *",
-// };
+export const config = {
+  schedule: "7 4-23 * * *",
+};
 
 /* ========================= keywords=teszt
   { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/vallalatiranyitasi-rendszer-sap/budapest?em[]=1" },
-  { key: "aam", label: "aam", url: "https://aam.hu/karrier" },
 */
 
 
@@ -38,26 +37,12 @@ function normalizeText(s) {
     .toLowerCase();
 }
 
-const INTERNSHIP_KEYWORDS = [
-  "gyakornok", "intern", "internship", "trainee",
-  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
-];
-function isInternshipTitle(title) {
-  const t = normalizeText(title);
-  return INTERNSHIP_KEYWORDS.some(k => t.includes(k));
-}
-
 function normalizeWhitespace(s) {
   return String(s ?? "").replace(/\s+/g, " ").trim();
 }
 
 function titleNotBlacklisted(title) {
   const TITLE_BLACKLIST = [
-    "marketing","sales","hr","finance","pénzügy","könyvelő",
-    "accountant","manager","vezető","director","adminisztráció",
-    "asszisztens","ügyfélszolgálat","customer service","call center",
-    "értékesítő","bizto sítás","tanácsadó","biztosítás",
-    "Adótanácsadó","Auditor","Accountant","Accounts","Tanácsadó",
      "senior",
     "szenior", "Villamosmérnök ", "ipari","Építészmérnök",
   "lead",
@@ -66,7 +51,8 @@ function titleNotBlacklisted(title) {
   "architect",
   "expert",
   "vezető fejlesztő",
-  "tech lead"
+  "tech lead",
+  "igazgató", "vezető"
   ];
   const t = normalizeText(title);
   return !TITLE_BLACKLIST.some(word => t.includes(normalizeText(word)));
@@ -195,17 +181,15 @@ function getDedupeKey(rawUrl) {
    DB upsert
 --------------------- */
 async function upsertJob(client, source, item) {
-  const canonicalUrl = item.url;
-  const experience = isInternshipTitle(item.title) ? "diákmunka" : "-";
+  const experience = "-";
 
   await client.query(
-    `INSERT INTO job_posts
-      (source, title, url, canonical_url, experience, first_seen)
-     VALUES ($1,$2,$3,$4,$5,NOW())
+    `INSERT INTO marketing_job_posts
+      (source, title, url, experience, first_seen)
+     VALUES ($1,$2,$3,$4,NOW())
      ON CONFLICT (source, url)
-        DO NOTHING;
-        `,
-    [source, item.title, item.url, canonicalUrl, experience]
+        DO NOTHING;`,
+    [source, item.title, item.url, experience]
   );
 }
 
@@ -213,16 +197,17 @@ function levelNotBlacklisted(title, desc) {
   const LEVEL_BLACKLIST = [
     "medior", "senior", "szenior", "szernior", "lead", "principal", "expert",
     "staff", "architect", "sr.", "sr ", "sen.",
-    "experienced", "expertise"
+    "experienced", "expertise",
+    "gyakornok", "intern", "internship", "trainee", "traineeship",
+    "diákmunka", "diakmunka",
+    "igazgató", "vezető"
   ];
-  const t = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-  return !LEVEL_BLACKLIST.some(w => t.includes(normalizeText(w)));
+  const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
+  return !LEVEL_BLACKLIST.some((kw) => combined.includes(normalizeText(kw)));
 }
 
-const AAM_JOB_PREFIX = "https://aam.hu/allasajanlatok";
 const KARRIERHUNGARIA_JOB_PREFIX = "https://karrierhungaria.hu/allasajanlat";
 const URL_BLACKLIST = new Set([
-  normalizeUrl("https://aam.hu/allasajanlatok#content"),
   normalizeUrl("https://karrierhungaria.hu/allasajanlat-kategoriak"),
   normalizeUrl("https://karrierhungaria.hu/allasajanlatok/projektmenedzsment2"),
   normalizeUrl("https://karrierhungaria.hu/allasajanlatok/rendszerintegrator"),
@@ -242,21 +227,10 @@ export default async () => {
 
 
 const SOURCES = [
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/it-programozas-fejlesztes/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/it-uzemeltetes-telekommunikacio/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/tesztelo-tesztmernok/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/projektmenedzsment2/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/rendszerintegrator/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/rendszeruzemelteto/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/projektmenedzsment5/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/halozati-es-rendszermernok/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/adatbazisszakerto/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/kontrolling/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/programozo-fejleszto/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/vallalatiranyitasi-rendszer-sap/budapest?em[]=1" },
+  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/marketing-media-pr/budapest?em[]=1" },
+  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/adminisztracio-asszisztens-irodai-munka/budapest?em[]=1" },
 
-  { key: "aam", label: "aam", url: "https://aam.hu/karrier" },
-  { key: "aam", label: "aam", url: "https://aam.hu/allasajanlatok" },
+
 ];
 
   const client = await pool.connect();
@@ -275,7 +249,6 @@ const SOURCES = [
 
       let items = rawItems.filter(it => {
         if (URL_BLACKLIST.has(normalizeUrl(it.url))) return false;
-        if (p.key === "aam" && !it.url.startsWith(AAM_JOB_PREFIX)) return false;
         if (p.key === "karrierhungaria" && !it.url.startsWith(KARRIERHUNGARIA_JOB_PREFIX)) return false;
         if (!levelNotBlacklisted(it.title, it.description)) return false;
         if (!titleNotBlacklisted(it.title)) return false;

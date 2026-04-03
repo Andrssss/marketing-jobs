@@ -95,35 +95,6 @@ function parseLimit(rawLimit) {
   return Math.min(Math.max(parsed, 1), MAX_LIMIT);
 }
 
-// Keywords that indicate marketing / office / admin roles
-const MARKETING_KEYWORDS = [
-  "marketing",
-  "irodai",
-  "asszisztens",
-  "adminisztrátor",
-  "adminisztratív",
-  "office assistant",
-  "office manager",
-  "recepciós",
-  "titkár",
-  "titkárnő",
-  "koordinátor",
-  "social media",
-  "pr ",
-  "kommunikáció",
-  "content",
-  "copywriter",
-  "brand",
-  "kampány",
-  "média",
-  "seo",
-  "sem",
-  "crm",
-  "email marketing",
-  "hírlevél",
-  "ügyfélszolgálat",
-];
-
 exports.handler = async (event) => {
   let client;
   try {
@@ -167,13 +138,6 @@ exports.handler = async (event) => {
     const source = qs.source || null;
     client = await pool.connect();
 
-    // Build keyword filter
-    const titleConditions = MARKETING_KEYWORDS.map(
-      (_, i) => `LOWER(title) LIKE $${i + 1}`
-    );
-    const keywordWhere = `(${titleConditions.join(" OR ")})`;
-    const baseParams = MARKETING_KEYWORDS.map((k) => `%${k}%`);
-
     // GET /marketing-jobs/sources
     if (
       path.endsWith("/marketing-jobs/sources") ||
@@ -182,10 +146,8 @@ exports.handler = async (event) => {
       const { rows } = await client.query(
         `SELECT source, COUNT(*)::int AS count
          FROM marketing_job_posts
-         WHERE ${keywordWhere}
          GROUP BY source
-         ORDER BY count DESC`,
-        baseParams
+         ORDER BY count DESC`
       );
 
       return jsonResponse(200, rows, {
@@ -194,7 +156,7 @@ exports.handler = async (event) => {
     }
 
     // GET /marketing-jobs (list)
-    let nextParam = baseParams.length + 1;
+    let nextParam = 1;
 
     let timeWhere = "";
     if (timeRange === "24h") {
@@ -204,7 +166,7 @@ exports.handler = async (event) => {
     }
 
     let sourceWhere = "";
-    const params = [...baseParams];
+    const params = [];
     if (source) {
       sourceWhere = `AND source = $${nextParam}`;
       params.push(source);
@@ -219,7 +181,7 @@ exports.handler = async (event) => {
              first_seen AS "firstSeen",
              experience
       FROM marketing_job_posts
-      WHERE ${keywordWhere}
+      WHERE TRUE
         ${timeWhere}
         ${sourceWhere}
       ORDER BY first_seen DESC, id DESC

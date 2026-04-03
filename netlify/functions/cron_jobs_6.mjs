@@ -1,8 +1,8 @@
 // netlify/functions/cron_jobs_6.mjs
 // console.log("CRON_JOBS_6 LOADED");
-// export const config = {
-//   schedule: "4 4-23 * * *",
-// };
+export const config = {
+  schedule: "4 4-23 * * *",
+};
 
 /* =========================
 const SOURCES = [
@@ -112,194 +112,42 @@ function dedupeByUrl(items) {
 // Sources (csak az első 4 debugolásra)
 // =====================
 const SOURCES = [
-  { key: "cvcentrum-gyakornok-it", label: "CV Centrum – gyakornok IT", url: "https://cvcentrum.hu/?s=&category%5B%5D=it&category%5B%5D=it-programozas&category%5B%5D=it-uzemeltetes&type=&location%5B%5D=budapest&_noo_job_field_year_experience=&post_type=noo_job" },
+    { key: "cvcentrum-gyakornok-it", label: "CV Centrum – gyakornok IT", url: "https://cvcentrum.hu/?s=&category%5B%5D=adminisztracio&category%5B%5D=it&category%5B%5D=marketing&category%5B%5D=marketing-media&type=&location%5B%5D=budapest&_noo_job_field_year_experience=&post_type=noo_job" },
 ];
 
-// =====================
-// Keywords
-// =====================
-const KEYWORDS_STRONG = [
-  "gyakornok",
-  "intern",
-  "internship",
-  "trainee",
-  "junior",
-  "developer",
-  "fejlesztő",
-  "fejleszto",
-  "szoftverfejleszto",
-  "engineer",
-  "software",
-  "data",
-  "analyst",
-  "scientist",
-  "automation",
-  "java",
-  "python",
-  "AI",
-  "Cybersecurity",
-  "javascript",
-  "php",
-  "c++",
-  "nodejs",
-  "database",
-  "test",
-  "teszt",
-  "testing",
-  "teszteles",
-  "tesztelés",
-  "web",
-  "weboldal",
-  "net",
-  "node",
-  "typescript",
-  "sql",
-  "frontend",
-  "backend",
-  "fullstack",
-  "full-stack",
-  "webfejleszto",
-  "webfejlesztő",
-  "react",
-  "angular",
-  "devops",
-  "cloud",
-  "infrastructure",
-  "platform",
-  "platforms",
-  "service",
-  "services",
-  "helpdesk",
-  "security",
-  "biztonsag",
-  "biztonsagi",
-  "biztonsági",
-  "biztonsagtechnikai",
-  "biztonságtechnikai",
-  "kiberbiztonsag",
-  "kiberbiztonsági",
-  "kiberbiztonság",
-  "rendszermernok",
-  "rendszermérnök",
-  "uzemeltetes",
-  "uzemeltetesi",
-  "üzemeltetés",
-  "üzemeltetési",
-  "penzugy",
-  "pénzügy",
-  "penzugyi",
-  "pénzügyi",
-  "digitalis",
-  "digitális",
-  "power",
-  "application",
-  "system",
-  "systems",
-  "engineering",
-  "development",
-  "program",
-  "programozo",
-  "integration",
-  "technical",
-  "quality",
-  "servicenow",
-  "linux",
-  "android",
-  "databricks",
-  "abap",
-  "sap",
-  "informatikai",
-  "informatika",
-  "rendszer",
-  "rendszergazda",
-  "rendszeruzemelteto",
-  "rendszeruzemeltető",
-  "uzemelteto",
-  "üzemeltető",
-  "szoftvertesztelo",
-  "szoftvertesztelő",
-  "manual",
-  "embedded",
-  "systemtest",
-  "tesztrendszer",
-  "applications",
-  "graduate",
-  "graduates",
-  "tesztelo",
-  "support",
-  "operations",
-  "qa",
-  "tester",
-  "sysadmin",
-  "network",
-  "jog",
-  "jogi",
-];
 
 
 const SENIOR_KEYWORDS = [
   "senior",
-    "szenior",
-    "medior",
+  "szenior",
+  "medior",
   "lead",
   "principal",
   "staff",
   "architect",
   "expert",
   "vezető fejlesztő",
-  "tech lead"
+  "tech lead",
+  "gyakornok",
+  "intern",
+  "internship",
+  "trainee",
+  "diákmunka",
+  "diakmunka",
 ];
 
-const INTERNSHIP_KEYWORDS = [
-  "gyakornok", "intern", "internship", "trainee",
-  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
-];
-
-function isInternshipTitle(title) {
-  const n = normalizeText(title ?? "");
-  return INTERNSHIP_KEYWORDS.some(k => n.includes(k));
-}
-
-function hasWord(n, w) {
-  // szóhatár: it ne találjon bele más szavakba
-  const re = new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-  return re.test(n);
-}
 
 
 
 
 
-function matchesKeywords(title, desc) {
-  const n = normalizeText(`${title ?? ""} ${desc ?? ""}`);
 
-  const strongHit = KEYWORDS_STRONG.some(k => n.includes(normalizeText(k)));
-  const itHit = hasWord(n, "it"); // csak külön szóként
-  const aiHit = hasWord(n, "ai"); // csak külön szóként
-
-  // szabály:
-  // - ha van strongHit → ok
-  // - ha csak "it" vagy "ai" van, az NEM elég (különben túl sok false positive)
-  return strongHit || ((itHit || aiHit) && /support|sysadmin|network|qa|tester|developer|data|analyst|operations|security|biztonsag|tanacsado|consultant|engineer|fejleszto|fejlesztő/.test(n));
-}
 
 function isSeniorLike(title = "", desc = "") {
   const n = normalizeText(`${title} ${desc}`);
   return SENIOR_KEYWORDS.some(k => n.includes(normalizeText(k)));
 }
 
-
-function keywordHit(title, desc) {
-  const n = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-
-  const hits = [];
-  if (hasWord(n, "it")) hits.push("it"); // szóhatáros
-  for (const k of KEYWORDS_STRONG) {
-    const nk = normalizeText(k);
-    if (nk !== "it" && n.includes(nk)) hits.push(k);
-  }
-  return hits;
-}
 
 
 function looksLikeJobUrl(sourceKey, url) {
@@ -465,7 +313,7 @@ async function upsertJob(client, source, item) {
   const experience = item.experience ?? extractExperience(item.description);
 
   await client.query(
-    `INSERT INTO job_posts
+    `INSERT INTO marketing_job_posts
       (source, title, url, experience, first_seen)
      VALUES ($1,$2,$3,$4,NOW())
      ON CONFLICT (source, url)
@@ -552,7 +400,6 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       // FILTER & KEYWORD MATCH
       // =========================
       let matchedList = merged
-        .filter((c) => matchesKeywords(c.title, c.description))
         .filter((c) => !isSeniorLike(c.title, c.description));
 
 
@@ -570,22 +417,6 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       // DEBUG REJECTED
       // =========================
       let rejected = [];
-      if (debug) {
-        rejected = merged
-          .filter((c) => !matchesKeywords(c.title, c.description))
-          .slice(0, 30)
-          .map((c) => {
-            const norm = normalizeText(`${c.title ?? ""} ${c.description ?? ""}`);
-            return {
-              title: c.title,
-              url: c.url,
-              hits: keywordHit(c.title, c.description),
-              normPreview: norm.slice(0, 220),
-              itWord: hasWord(norm, "it"),
-              hasStrong: KEYWORDS_STRONG.some((k) => norm.includes(normalizeText(k))),
-            };
-          });
-      }
 
       stats.portals.push({ source, label: p.label, url: p.url, ok: true, matched: matchedList.length, rejected });
 
@@ -594,7 +425,6 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       // =========================
       if (write && client) {
         for (const item of matchedList) {
-          if (isInternshipTitle(item.title)) item.experience = "diákmunka";
           await upsertJob(client, source, item);
         }
       }

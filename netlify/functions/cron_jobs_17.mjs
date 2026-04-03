@@ -1,12 +1,11 @@
-// export const config = {
-//   schedule: "14 4-23 * * *",
-// };
+export const config = {
+  schedule: "12 4-23 * * *",
+};
 
 /* =========================
-  "https://api.dreamjobs.hu/api/v1/jobs?region=hu&page=1&tags%5Bjob-category%5D%5B%5D=57&tags%5Bjob-category%5D%5B%5D=44&tags%5Bjob-category%5D%5B%5D=49&tags%5Bjob-category%5D%5B%5D=55&tags%5Bjob-category%5D%5B%5D=58&tags%5Boffice-location%5D%5B%5D=2925&scope%5B%5D=isNotBlue&per_page=50",
-  "https://melonjobs.hu/wp-json/wp/v2/job-listings?job-categories=63&per_page=100&page=1";
-  "https://jobs.kuka.com/tile-search-results/?q=&locationsearch=HU&optionsFacetsDD_department=IT";
-  "https://careers.tesco.com/en_GB/careersmarketplace/SearchJobs/?748_location_place=Budapest,%20Central%20Hungary,%20Hungary&748_location_radius=20&748_location_coordinates=[47.5,19.04]&listFilterMode=1&jobRecordsPerPage=50";
+  DreamJobs: category=52 (Marketing, PR), location=2925 (Budapest)
+  MelonJobs: job-categories=91 (Adminisztrátor, Dokumentumkezelő), 196 (Marketing, Média, PR vezető)
+  KUKA: Marketing+Communication & Administration, Budapest
 */
 
 
@@ -27,18 +26,16 @@ const pool = new Pool({
 const MAX_PAGES = 20;
 
 const DREAMJOBS_API_URLS = [
-  "https://api.dreamjobs.hu/api/v1/jobs?region=hu&page=1&tags%5Bjob-category%5D%5B%5D=57&tags%5Bjob-category%5D%5B%5D=44&tags%5Bjob-category%5D%5B%5D=49&tags%5Bjob-category%5D%5B%5D=55&tags%5Bjob-category%5D%5B%5D=58&tags%5Boffice-location%5D%5B%5D=2925&scope%5B%5D=isNotBlue&per_page=50",
-  "https://api.dreamjobs.hu/api/v1/jobs?region=hu&page=1&tags%5Bjob-category%5D%5B%5D=44&tags%5Bjob-category%5D%5B%5D=49&tags%5Bjob-category%5D%5B%5D=57&tags%5Bjob-category%5D%5B%5D=22381&tags%5Boffice-location%5D%5B%5D=2925&tags%5Boffice-location%5D%5B%5D=15990&scope%5B%5D=isNotBlue&per_page=50",
+  "https://api.dreamjobs.hu/api/v1/jobs?region=hu&page=1&tags%5Bjob-category%5D%5B%5D=52&tags%5Boffice-location%5D%5B%5D=2925&scope%5B%5D=isNotBlue&per_page=50",
 ];
 
 const MELONJOBS_API_URL =
-  "https://melonjobs.hu/wp-json/wp/v2/job-listings?job-categories=63&per_page=100&page=1";
+  "https://melonjobs.hu/wp-json/wp/v2/job-listings?job-categories=91,196&per_page=100&page=1";
 
-const KUKA_API_URL =
-  "https://jobs.kuka.com/tile-search-results/?q=&locationsearch=HU&optionsFacetsDD_department=IT";
-
-const TESCO_URL =
-  "https://careers.tesco.com/en_GB/careersmarketplace/SearchJobs/?748_location_place=Budapest,%20Central%20Hungary,%20Hungary&748_location_radius=20&748_location_coordinates=[47.5,19.04]&listFilterMode=1&jobRecordsPerPage=50";
+const KUKA_API_URLS = [
+  "https://jobs.kuka.com/tile-search-results/?q=&locationsearch=Budapest&optionsFacetsDD_department=Marketing+and+Communication",
+  "https://jobs.kuka.com/tile-search-results/?q=&locationsearch=Budapest&optionsFacetsDD_department=Administration",
+];
 
 /* ── shared helpers ─────────────────────────────────────────── */
 
@@ -138,18 +135,15 @@ function htmlToText(html) {
 }
 
 async function upsertJob(client, sourceKey, item) {
-  const canonicalUrl = normalizeUrl(item.url);
-
   await client.query(
-    `INSERT INTO job_posts
-      (source, title, url, canonical_url, experience, first_seen)
-     VALUES ($1,$2,$3,$4,$5,NOW())
+    `INSERT INTO marketing_job_posts
+      (source, title, url, experience, first_seen)
+     VALUES ($1,$2,$3,$4,NOW())
      ON CONFLICT (source, url)
      DO UPDATE SET
        title = EXCLUDED.title,
-       canonical_url = EXCLUDED.canonical_url,
-       experience = COALESCE(EXCLUDED.experience, job_posts.experience);`,
-    [sourceKey, item.title, item.url, canonicalUrl, item.experience ?? "-"]
+       experience = COALESCE(EXCLUDED.experience, marketing_job_posts.experience);`,
+    [sourceKey, item.title, item.url, item.experience ?? "-"]
   );
 }
 
@@ -226,28 +220,20 @@ const SENIOR_KEYWORDS = [
   "architect",
   "expert",
   "vezető fejlesztő",
-  "tech lead"
+  "tech lead",
+  "gyakornok",
+  "intern",
+  "internship",
+  "trainee",
+  "diákmunka",
+  "diakmunka",
+  "igazgató",
+  "vezető",
 ];
-
-function isBudapestLocation(location) {
-  const normalized = normalizeText(location);
-  return normalized.includes("budapest") || /\b1\d{3}\b/.test(normalized);
-}
-
-const INTERNSHIP_KEYWORDS = [
-  "gyakornok", "intern", "internship", "trainee",
-  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
-];
-
-function isInternshipTitle(title) {
-  const n = normalizeText(title ?? "");
-  return INTERNSHIP_KEYWORDS.some(k => n.includes(k));
-}
 
 function inferExperience(title, description) {
   const normalized = normalizeText(`${title ?? ""} ${description ?? ""}`);
 
-  if (INTERNSHIP_KEYWORDS.some(k => normalized.includes(k))) return "diákmunka";
   if (SENIOR_KEYWORDS.some((kw) => normalized.includes(normalizeText(kw)))) return "senior";
   if (/\bmedior\b/.test(normalized)) return "medior";
   if (/\bjunior\b|\bpalyakezdo\b|\bentry level\b/.test(normalized)) return "junior";
@@ -384,8 +370,18 @@ function extractKukaYearExperience(html) {
 }
 
 async function fetchAllKukaJobs() {
-  const html = await fetchText(KUKA_API_URL);
-  const jobs = extractKukaJobs(html);
+  const jobs = [];
+  const seen = new Set();
+
+  for (const apiUrl of KUKA_API_URLS) {
+    const html = await fetchText(apiUrl);
+    for (const job of extractKukaJobs(html)) {
+      if (!seen.has(job.url)) {
+        seen.add(job.url);
+        jobs.push(job);
+      }
+    }
+  }
 
   for (let i = 0; i < jobs.length; i++) {
     const job = jobs[i];
@@ -404,40 +400,7 @@ async function fetchAllKukaJobs() {
 
   return jobs;
 }
-/* ── Tesco ─────────────────────────────────────────────── */
 
-function extractTescoJobs(html) {
-  const $ = cheerioLoad(html);
-  const jobs = [];
-  const seen = new Set();
-
-  $("article").each((_i, el) => {
-    const $art = $(el);
-    const $link = $art.find("h3 a.link").first();
-    const title = normalizeWhitespace($link.text());
-    const href = $link.attr("href");
-    if (!title || !href) return;
-
-    const url = normalizeUrl(
-      href.startsWith("http") ? href : `https://careers.tesco.com${href}`
-    );
-    if (seen.has(url)) return;
-    seen.add(url);
-
-    jobs.push({
-      title,
-      url,
-      experience: inferExperience(title, ""),
-    });
-  });
-
-  return jobs;
-}
-
-async function fetchAllTescoJobs() {
-  const html = await fetchText(TESCO_URL);
-  return extractTescoJobs(html);
-}
 /* ── handler ────────────────────────────────────────────────── */
 
 export default async () => {
@@ -470,15 +433,6 @@ export default async () => {
       await upsertJob(client, "kuka", job);
     }
     console.log(`kuka: ${kukaJobs.length} jobs processed`);
-
-    /* Tesco */
-    const tescoJobs = (await fetchAllTescoJobs()).filter((job) => !isSeniorLike(job.title, ""));
-    console.log(`tesco: ${tescoJobs.length} jobs found`);
-
-    for (const job of tescoJobs) {
-      await upsertJob(client, "tesco", job);
-    }
-    console.log(`tesco: ${tescoJobs.length} jobs processed`);
 
     return new Response("OK");
   } finally {

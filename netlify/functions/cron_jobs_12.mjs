@@ -1,9 +1,9 @@
-// export const config = {
-//   schedule: "17 4-23 * * *",
-// };
+export const config = {
+  schedule: "9 4-23 * * *",
+};
 
 /* ========================= GETTING EXPERIENCE LEVEL
-const ENRICH_SOURCES = ["aam", "karrierhungaria"];
+const ENRICH_SOURCES =  "karrierhungaria"];
 --------------------- */
 
 import { Pool } from "pg";
@@ -33,15 +33,6 @@ function normalizeText(s) {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
-}
-
-const INTERNSHIP_KEYWORDS = [
-  "gyakornok", "intern", "internship", "trainee",
-  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
-];
-function isInternshipTitle(title) {
-  const t = normalizeText(title);
-  return INTERNSHIP_KEYWORDS.some(k => t.includes(k));
 }
 
 function sleep(ms) {
@@ -137,7 +128,7 @@ export default async () => {
   try {
     const { rows: enrichRows } = await client.query(
       `SELECT id, url, title
-       FROM job_posts
+       FROM marketing_job_posts
        WHERE first_seen >= NOW() - INTERVAL '10 minutes'
          AND (experience IS NULL OR experience = '-')
          AND source = ANY($1::text[])
@@ -151,11 +142,9 @@ export default async () => {
         const detailHtml = await fetchText(row.url);
         let experience = extractExperienceFromHtml(detailHtml);
 
-        if (isInternshipTitle(row.title)) experience = "diákmunka";
-
         if (experience) {
           await client.query(
-            `UPDATE job_posts
+            `UPDATE marketing_job_posts
              SET experience = $1
              WHERE id = $2`,
             [experience, row.id]

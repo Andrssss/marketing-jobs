@@ -1,6 +1,6 @@
-// export const config = {
-//   schedule: "13 4-23 * * *",
-// };
+export const config = {
+  schedule: "11 4-23 * * *",
+};
 
 
 /* =========================
@@ -40,27 +40,15 @@ function normalizeText(s) {
     .toLowerCase();
 }
 
-const INTERNSHIP_KEYWORDS = [
-  "gyakornok", "intern", "internship", "trainee",
-  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
-];
-function isInternshipTitle(title) {
-  const t = normalizeText(title);
-  return INTERNSHIP_KEYWORDS.some(k => t.includes(k));
-}
-
 function normalizeWhitespace(s) {
   return String(s ?? "").replace(/\s+/g, " ").trim();
 }
 
 function titleNotBlacklisted(title) {
   const TITLE_BLACKLIST = [
-    "marketing","sales","hr","finance","pénzügy","könyvelő",
-    "accountant","manager","vezető","director","adminisztráció",
-    "asszisztens","ügyfélszolgálat","customer service","call center",
-    "értékesítő","bizto sítás","tanácsadó","biztosítás",
-    "Adótanácsadó","Auditor","Accountant","Accounts","Tanácsadó",
-  "Villamosmérnök ", "ipari","Építészmérnök"
+    "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
+    "lead", "expert", "vezető fejlesztő", "tech lead",
+    "igazgató", "vezető"
   ];
   const t = normalizeText(title);
   return !TITLE_BLACKLIST.some(word => t.includes(normalizeText(word)));
@@ -167,17 +155,15 @@ function getDedupeKey(rawUrl) {
    DB upsert
 --------------------- */
 async function upsertJob(client, source, item) {
-  const canonicalUrl = item.url;
-  const experience = isInternshipTitle(item.title) ? "diákmunka" : "-";
+  const experience = "-";
 
   await client.query(
-    `INSERT INTO job_posts
-      (source, title, url, canonical_url, experience, first_seen)
-     VALUES ($1,$2,$3,$4,$5,NOW())
-     ON CONFLICT (source, canonical_url)
-        DO NOTHING;
-        `,
-    [source, item.title, item.url, canonicalUrl, experience]
+    `INSERT INTO marketing_job_posts
+      (source, title, url, experience, first_seen)
+     VALUES ($1,$2,$3,$4,NOW())
+     ON CONFLICT (source, url)
+        DO NOTHING;`,
+    [source, item.title, item.url, experience]
   );
 }
 
@@ -185,10 +171,13 @@ function levelNotBlacklisted(title, desc) {
   const LEVEL_BLACKLIST = [
      "senior", "szenior", "szernior", "lead", "principal", "expert",
     "staff", "architect", "sr.", "sr ", "sen.",
-    "experienced", "expertise", "head"
+    "experienced", "expertise", "head",
+    "gyakornok", "intern", "internship", "trainee", "traineeship",
+    "diákmunka", "diakmunka",
+    "igazgató", "vezető"
   ];
-  const t = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-  return !LEVEL_BLACKLIST.some(w => t.includes(normalizeText(w)));
+  const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
+  return !LEVEL_BLACKLIST.some((kw) => combined.includes(normalizeText(kw)));
 }
 
 // Bluebird RSS feldolgozó

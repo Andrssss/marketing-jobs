@@ -1,17 +1,13 @@
 // netlify/functions/cron_jobs.mjs
-// netlify/functions/cron_jobs.js
 // console.log("CRON_JOBS LOADED");
-// export const config = {
-//   schedule: "1 4-23 * * *",
-// };
+export const config = {
+  schedule: "1 4-23 * * *",
+};
 
 /* =========================
 const SOURCES = [
-  { key: "otp", label: "OTP", url: "https://karrier.otpbank.hu/go/Minden-allasajanlat/1167001/?q=&q2=&alertId=&locationsearch=&title=GYAKORNOK&date=&location=&shifttype=" },
-  { key: "vizmuvek",  label:  "vizmuvek", url: "https://www.vizmuvek.hu/hu/karrier/gyakornoki-dualis-kepzes" },
   { key: "wherewework", label: "wherewework", url: "https://www.wherewework.hu/en/jobs/budaors,budapest/bpo-services,health-services,other-services,others,pharmaceutical,horeca,itc,trade,agriculture,education" },
   { key: "wherewework", label: "wherewework", url: "https://www.wherewework.hu/en/jobs/student-internship,entry-level-2-years/budapest?page=1" },
-  { key: "onejob", label: "onejob", url: "https://onejob.hu/munkaink/?job__category_spec=informatika&job__location_spec=budapest" },
   { key: "nofluffjobs", label: "nofluffjobs", url: "https://nofluffjobs.com/hu/budapest?utm_source=facebook&utm_medium=social_cpc&utm_campaign=hbp&utm_content=Instagram_Reels&utm_id=120239436336450697&utm_term=120239436336520697&fbclid=PAdGRleAP9v2xleHRuA2FlbQEwAGFkaWQBqy0hd5G9WXNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABp-R_SE_c9O6KU5EqFghpD-ajuuKDtviyfnC4ISpI22VXvxQFO3UL-hd8sdBG_aem_9-6Oig3Ju0SERNEIrcg6kw&criteria=seniority%3Dtrainee,junior" },
   { key: "nofluffjobs", label: "nofluffjobs", url: "https://nofluffjobs.com/hu/budapest?criteria=seniority%3Dtrainee,junior" },
   { key: "nofluffjobs", label: "nofluffjobs", url: "https://nofluffjobs.com/hu/budapest?criteria=seniority%3Dtrainee,junior&sort=newest" },
@@ -125,161 +121,21 @@ function dedupeByUrl(items) {
 // Sources (csak az első 4 debugolásra)
 // =====================
 const SOURCES = [
-  { key: "otp", label: "OTP", url: "https://karrier.otpbank.hu/go/Minden-allasajanlat/1167001/?q=&q2=&alertId=&locationsearch=&title=GYAKORNOK&date=&location=&shifttype=" },
-  { key: "vizmuvek",  label:  "vizmuvek", url: "https://www.vizmuvek.hu/hu/karrier/gyakornoki-dualis-kepzes" },
-  { key: "wherewework", label: "wherewework", url: "https://www.wherewework.hu/en/jobs/budaors,budapest/bpo-services,health-services,other-services,others,pharmaceutical,horeca,itc,trade,agriculture,education" },
-  { key: "wherewework", label: "wherewework", url: "https://www.wherewework.hu/en/jobs/student-internship,entry-level-2-years/budapest?page=1" },
-  { key: "onejob", label: "onejob", url: "https://onejob.hu/munkaink/?job__category_spec=informatika&job__location_spec=budapest" },
-  { key: "nofluffjobs", label: "nofluffjobs", url: "https://nofluffjobs.com/hu/budapest?utm_source=facebook&utm_medium=social_cpc&utm_campaign=hbp&utm_content=Instagram_Reels&utm_id=120239436336450697&utm_term=120239436336520697&fbclid=PAdGRleAP9v2xleHRuA2FlbQEwAGFkaWQBqy0hd5G9WXNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABp-R_SE_c9O6KU5EqFghpD-ajuuKDtviyfnC4ISpI22VXvxQFO3UL-hd8sdBG_aem_9-6Oig3Ju0SERNEIrcg6kw&criteria=seniority%3Dtrainee,junior" },
-  { key: "nofluffjobs", label: "nofluffjobs", url: "https://nofluffjobs.com/hu/budapest?criteria=seniority%3Dtrainee,junior" },
-  { key: "nofluffjobs", label: "nofluffjobs", url: "https://nofluffjobs.com/hu/budapest?criteria=seniority%3Dtrainee,junior&sort=newest" },
-  { key: "nofluffjobs", label: "nofluffjobs", url: "https://nofluffjobs.com/hu/budapest/artificial-intelligence?criteria=requirement%3DJava,Python,C%23,SQL,C%2B%2B,Golang,JavaScript,React,Angular,TypeScript,HTML,Git,Vue.js,Kotlin,Android%20category%3Dsys-administrator,business-analyst,architecture,backend,data,ux,devops,erp,embedded,frontend,fullstack,game-dev,mobile,project-manager,security,support,testing,other%20seniority%3Dtrainee,junior" },
+  { key: "wherewework", label: "wherewework", url: "https://www.wherewework.hu/en/jobs/entry-level-2-years/budapest/banksinsurancepensionsother-financial-services" },
+{ key: "nofluffjobs", label: "nofluffjobs", url: "https://nofluffjobs.com/hu/budapest/marketing?utm_source=facebook&utm_medium=social_cpc&utm_campaign=hbp&utm_content=Instagram_Reels&utm_id=120239436336450697&utm_term=120239436336520697&fbclid=PAdGRleAP9v2xleHRuA2FlbQEwAGFkaWQBqy0hd5G9WXNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABp-R_SE_c9O6KU5EqFghpD-ajuuKDtviyfnC4ISpI22VXvxQFO3UL-hd8sdBG_aem_9-6Oig3Ju0SERNEIrcg6kw&criteria=seniority%3Djunior" },
+{ key: "nofluffjobs", label: "nofluffjobs", url: "https://nofluffjobs.com/hu/budapest/office-administration?utm_source=facebook&utm_medium=social_cpc&utm_campaign=hbp&utm_content=Instagram_Reels&utm_id=120239436336450697&utm_term=120239436336520697&fbclid=PAdGRleAP9v2xleHRuA2FlbQEwAGFkaWQBqy0hd5G9WXNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABp-R_SE_c9O6KU5EqFghpD-ajuuKDtviyfnC4ISpI22VXvxQFO3UL-hd8sdBG_aem_9-6Oig3Ju0SERNEIrcg6kw&criteria=seniority%3Djunior" },
+
 ];
 
 // =====================
 // Keywords
 // =====================
 const TITLE_BLACKLIST = [
-  "marketing",
-  "sales",
-  "hr",
-  "finance",
-  "pénzügy",
-  "könyvelő",
-  "accountant",
-  "manager",
-  "vezető",
-  "director",
-  "adminisztráció",
-  "asszisztens",
-  "ügyfélszolgálat",
-  "customer service",
-  "call center",
-  "értékesítő",
-  "biztosítás",
-  "tanácsadó",   
-  "Adótanácsadó" ,
-  "Auditor",
-  "Accountant",
-  "Accounts",
-  "Tanácsadó"
+  "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
+    "lead", "expert", "vezető fejlesztő", "tech lead",
+    "igazgató", "vezető"
 ];
 
-const KEYWORDS_STRONG = [
-  "gyakornok",
-  "intern",
-  "internship",
-  "trainee",
-  "junior",
-  "developer",
-  "fejlesztő",
-  "fejleszto",
-  "szoftverfejleszto",
-  "engineer",
-  "software",
-  "data",
-  "analyst",
-  "scientist",
-  "automation",
-  "java",
-  "python",
-  "javascript",
-  "php",
-  "c++",
-  "nodejs",
-  "database",
-  "test",
-  "teszt",
-  "testing",
-  "teszteles",
-  "tesztelés",
-  "web",
-  "weboldal",
-  "net",
-  "node",
-  "typescript",
-  "sql",
-  "frontend",
-  "backend",
-  "fullstack",
-  "full-stack",
-  "webfejleszto",
-  "webfejlesztő",
-  "react",
-  "angular",
-  "devops",
-  "cloud",
-  "infrastructure",
-  "platform",
-  "platforms",
-  "service",
-  "services",
-  "helpdesk",
-  "security",
-  "biztonsag",
-  "biztonsagi",
-  "biztonsági",
-  "biztonsagtechnikai",
-  "biztonságtechnikai",
-  "kiberbiztonsag",
-  "kiberbiztonsági",
-  "kiberbiztonság",
-  "rendszermernok",
-  "rendszermérnök",
-  "uzemeltetes",
-  "uzemeltetesi",
-  "üzemeltetés",
-  "üzemeltetési",
-  "penzugy",
-  "pénzügy",
-  "penzugyi",
-  "pénzügyi",
-  "digitalis",
-  "digitális",
-  "power",
-  "application",
-  "system",
-  "systems",
-  "engineering",
-  "development",
-  "program",
-  "programozo",
-  "integration",
-  "technical",
-  "quality",
-  "servicenow",
-  "linux",
-  "android",
-  "databricks",
-  "abap",
-  "sap",
-  "informatikai",
-  "informatika",
-  "rendszer",
-  "rendszergazda",
-  "rendszeruzemelteto",
-  "rendszeruzemeltető",
-  "uzemelteto",
-  "üzemeltető",
-  "szoftvertesztelo",
-  "szoftvertesztelő",
-  "manual",
-  "embedded",
-  "systemtest",
-  "tesztrendszer",
-  "applications",
-  "graduate",
-  "graduates",
-  "tesztelo",
-  "support",
-  "operations",
-  "qa",
-  "tester",
-  "sysadmin",
-  "network",
-  "jog",
-  "jogi",
-];
 
 const SENIOR_KEYWORDS = [
   "senior",
@@ -291,25 +147,16 @@ const SENIOR_KEYWORDS = [
   "architect",
   "expert",
   "vezető fejlesztő",
-  "tech lead"
+  "tech lead",
+  "gyakornok",
+  "intern",
+  "internship",
+  "trainee",
+  "diákmunka",
+  "diakmunka",
+  "igazgató",
+  "vezető",
 ];
-
-const INTERNSHIP_KEYWORDS = [
-  "gyakornok", "intern", "internship", "trainee",
-  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
-];
-
-function isInternshipTitle(title) {
-  const n = normalizeText(title ?? "");
-  return INTERNSHIP_KEYWORDS.some(k => n.includes(k));
-}
-
-function hasWord(n, w) {
-  // szóhatár: it ne találjon bele más szavakba
-  const re = new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-  return re.test(n);
-}
-
 
 
 
@@ -320,30 +167,6 @@ function hasWord(n, w) {
 
 
 // Netlify warm instance cache
-
-
-
-
-
-
-
-
-
-
-
-
-function matchesKeywords(title, desc) {
-  const n = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-
-  // Legalabb egy eros, szakmai kulcsszo legyen benne.
-  const hasStrongKeyword = KEYWORDS_STRONG.some((k) => n.includes(normalizeText(k)));
-  const aiHit = hasWord(n, "ai"); // csak külön szóként
-
-  // Blacklist alapú szűrés: ami tiltott szóval érkezik, kiesik.
-  const hasBlacklistedWord = TITLE_BLACKLIST.some((k) => n.includes(normalizeText(k)));
-  const matched = hasStrongKeyword || (aiHit && /engineer|developer|fejleszto|fejlesztő|analyst|scientist|consultant|support/.test(n));
-  return matched && !hasBlacklistedWord;
-}
 
 function isSeniorLike(title = "", desc = "") {
   const n = normalizeText(`${title} ${desc}`);
@@ -632,17 +455,15 @@ function extractCandidates(html, baseUrl) {
 // DB upsert (csak write=1 esetén)
 // =====================
 async function upsertJob(client, source, item) {
-  const canonicalUrl = normalizeUrl(item.url);
   await client.query(
-    `INSERT INTO job_posts
-      (source, title, url, canonical_url, experience, first_seen)
-     VALUES ($1,$2,$3,$4,$5,NOW())
+    `INSERT INTO marketing_job_posts
+      (source, title, url, experience, first_seen)
+     VALUES ($1,$2,$3,$4,NOW())
      ON CONFLICT (source, url)
      DO UPDATE SET
        title = EXCLUDED.title,
-       canonical_url = EXCLUDED.canonical_url,
-       experience = COALESCE(EXCLUDED.experience, job_posts.experience);`,
-    [source, item.title, item.url, canonicalUrl, item.experience ?? "-"]
+       experience = COALESCE(EXCLUDED.experience, marketing_job_posts.experience);`,
+    [source, item.title, item.url, item.experience ?? "-"]
   );
 }
 
@@ -712,7 +533,6 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
           if (source === "nofluffjobs") c.title = cleanJobTitle(c.title);
           return c;
         })
-        .filter((c) => matchesKeywords(c.title, c.description))
         .filter((c) => !isSeniorLike(c.title, c.description));
 
 
@@ -723,9 +543,6 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       const BLACKLIST_SOURCES = [ "jobline", "otp","muisz"];
       const BLACKLIST_URLS = [
         "https://jobline.hu/allasok/25,200307,162",
-        "https://karrier.otpbank.hu/go/Minden-allasajanlat/1167001/?q=",
-        "https://muisz.hu/hu/regisztracio",
-        "https://muisz.hu/hu/diakmunkaink",
 
       ];
 
@@ -744,22 +561,7 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       // DEBUG REJECTED
       // =========================
       let rejected = [];
-      if (debug) {
-        rejected = merged
-          .filter((c) => !matchesKeywords(c.title, c.description))
-          .slice(0, 30)
-          .map((c) => {
-            const norm = normalizeText(`${c.title ?? ""} ${c.description ?? ""}`);
-            return {
-              title: c.title,
-              url: c.url,
-              hits: keywordHit(c.title, c.description),
-              normPreview: norm.slice(0, 220),
-              itWord: hasWord(norm, "it"),
-              hasBlacklisted: TITLE_BLACKLIST.some((k) => norm.includes(normalizeText(k))),
-            };
-          });
-      }
+
 
       stats.portals.push({ source, label: p.label, url: p.url, ok: true, matched: matchedList.length, rejected });
 
@@ -769,7 +571,7 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       if (write && client) {
         const DIAKMUNKA_SOURCES = ["otp", "vizmuvek"];
         for (const item of matchedList) {
-          if (DIAKMUNKA_SOURCES.includes(source) || isInternshipTitle(item.title)) item.experience = "diákmunka";
+          if (DIAKMUNKA_SOURCES.includes(source)) item.experience = "diákmunka";
           await upsertJob(client, source, item);
         }
       }

@@ -19,13 +19,13 @@ export default async () => {
   try {
     // LinkedIn: 60 nap, többi: 30 nap
     const { rowCount: linkedinCount } = await client.query(`
-      DELETE FROM job_posts
+      DELETE FROM marketing_job_posts
       WHERE source = 'LinkedIn'
         AND first_seen < (NOW() - INTERVAL '60 days')
     `);
 
     const { rowCount: otherCount } = await client.query(`
-      DELETE FROM job_posts
+      DELETE FROM marketing_job_posts
       WHERE source != 'LinkedIn'
         AND first_seen < (NOW() - INTERVAL '30 days')
     `);

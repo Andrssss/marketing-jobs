@@ -1,6 +1,6 @@
-// export const config = {
-//   schedule: "9 4-23 * * *",
-// };
+export const config = {
+  schedule: "8 4-23 * * *",
+};
 
 /* ========================= PAGE 1-3 ONLY
 const FRISSDIPLOMAS_JOB_PREFIX = "https://www.frissdiplomas.hu/allasok";
@@ -36,24 +36,15 @@ function normalizeText(s) {
     .toLowerCase();
 }
 
-const INTERNSHIP_KEYWORDS = [
-  "gyakornok", "intern", "internship", "trainee",
-  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
-];
-function isInternshipTitle(title) {
-  const t = normalizeText(title);
-  return INTERNSHIP_KEYWORDS.some(k => t.includes(k));
-}
-
 function normalizeWhitespace(s) {
   return String(s ?? "").replace(/\s+/g, " ").trim();
 }
 
 function titleNotBlacklisted(title) {
   const TITLE_BLACKLIST = [
-    "marketing", "sales", "hr", "finance", "pénzügy", "könyvelő",
     "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
-    "lead", "expert", "vezető fejlesztő", "tech lead"
+    "lead", "expert", "vezető fejlesztő", "tech lead",
+    "igazgató", "vezető"
   ];
   const t = normalizeText(title);
   return !TITLE_BLACKLIST.some((word) => t.includes(normalizeText(word)));
@@ -215,8 +206,8 @@ function isMatchingFrissdiplomasDetail(html) {
 
   if (directLocation || directArea) {
     const isBudapest = directLocation.includes("budapest");
-    const isInformatikai = directArea.includes("informatikai");
-    return isBudapest && isInformatikai;
+    const isMarketing = directArea.includes("marketing");
+    return isBudapest && isMarketing;
   }
 
   // Fallback if structure changes.
@@ -230,7 +221,7 @@ function isMatchingFrissdiplomasDetail(html) {
 
   const aroundLocation = pageText.slice(idxLocation, idxLocation + 220);
   const aroundArea = pageText.slice(idxArea, idxArea + 220);
-  return aroundLocation.includes("budapest") && aroundArea.includes("informatikai");
+  return aroundLocation.includes("budapest") && aroundArea.includes("marketing");
 }
 
 
@@ -238,16 +229,15 @@ function isMatchingFrissdiplomasDetail(html) {
    DB upsert
 --------------------- */
 async function upsertJob(client, source, item) {
-  const canonicalUrl = item.url;
-  const experience = isInternshipTitle(item.title) ? "diákmunka" : "-";
+  const experience = "-";
 
   await client.query(
-    `INSERT INTO job_posts
-      (source, title, url, canonical_url, experience, first_seen)
-     VALUES ($1,$2,$3,$4,$5,NOW())
+    `INSERT INTO marketing_job_posts
+      (source, title, url, experience, first_seen)
+     VALUES ($1,$2,$3,$4,NOW())
      ON CONFLICT (source, url)
         DO NOTHING;`,
-    [source, item.title, item.url, canonicalUrl, experience]
+    [source, item.title, item.url, experience]
   );
 }
 
@@ -255,10 +245,13 @@ function levelNotBlacklisted(title, desc) {
   const LEVEL_BLACKLIST = [
     "medior", "senior", "szenior", "szernior", "lead", "principal", "expert",
     "staff", "architect", "sr.", "sr ", "sen.",
-    "experienced", "expertise"
+    "experienced", "expertise",
+    "gyakornok", "intern", "internship", "trainee", "traineeship",
+    "diákmunka", "diakmunka",
+    "igazgató", "vezető"
   ];
-  const t = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-  return !LEVEL_BLACKLIST.some((w) => t.includes(normalizeText(w)));
+  const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
+  return !LEVEL_BLACKLIST.some((kw) => combined.includes(normalizeText(kw)));
 }
 
 const FRISSDIPLOMAS_JOB_PREFIX = "https://www.frissdiplomas.hu/allasok";

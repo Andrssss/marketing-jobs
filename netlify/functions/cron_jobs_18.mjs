@@ -1,6 +1,6 @@
-// export const config = {
-//   schedule: "15 4-23 * * *",
-// };
+export const config = {
+  schedule: "13 4-23 * * *",
+};
 
 /* =========================
   "https://hu.talent.com,
@@ -23,13 +23,10 @@ const pool = new Pool({
 });
 
 const TALENT_SEARCH_URLS = [
-  "https://hu.talent.com/jobs?k=fejleszt%C5%91&l=Budapest%2C+HU&date=1",
-  "https://hu.talent.com/jobs?k=programoz%C3%B3&l=Budapest%2C+HU&date=1",
-  "https://hu.talent.com/jobs?k=tesztel%C5%91&l=Budapest%2C+HU&date=1",
-    "https://hu.talent.com/jobs?k=tester&l=Budapest%2C+HU&date=1",
-    "https://hu.talent.com/jobs?k=programmer&l=Budapest%2C+HU&date=1",
-    "https://hu.talent.com/jobs?k=developer&l=Budapest%2C+HU&date=1",
-    "https://hu.talent.com/jobs?k=qa&l=Budapest%2C+HU&date=1",
+  "https://hu.talent.com/jobs?k=marketing&l=Budapest%2C+HU&date=1",
+  "https://hu.talent.com/jobs?k=irodai&l=Budapest%2C+HU&date=1",
+  "https://hu.talent.com/jobs?k=Market+Research&l=Budapest%2C+HU&date=1",
+  "https://hu.talent.com/jobs?k=elemző&l=Budapest%2C+HU&date=1",
 
 ];
 
@@ -121,18 +118,15 @@ function fetchText(url, redirectLeft = 5) {
 }
 
 async function upsertJob(client, sourceKey, item) {
-  const canonicalUrl = normalizeUrl(item.url);
-
   await client.query(
-    `INSERT INTO job_posts
-      (source, title, url, canonical_url, experience, first_seen)
-     VALUES ($1,$2,$3,$4,$5,NOW())
+    `INSERT INTO marketing_job_posts
+      (source, title, url, experience, first_seen)
+     VALUES ($1,$2,$3,$4,NOW())
      ON CONFLICT (source, url)
      DO UPDATE SET
        title = EXCLUDED.title,
-       canonical_url = EXCLUDED.canonical_url,
-       experience = COALESCE(EXCLUDED.experience, job_posts.experience);`,
-    [sourceKey, item.title, item.url, canonicalUrl, item.experience]
+       experience = COALESCE(EXCLUDED.experience, marketing_job_posts.experience);`,
+    [sourceKey, item.title, item.url, item.experience]
   );
 }
 
@@ -148,27 +142,20 @@ const SENIOR_KEYWORDS = [
   "expert",
   "vezető fejlesztő",
   "tech lead",
-  "CNC"
+  "CNC",
+  "gyakornok",
+  "intern",
+  "internship",
+  "trainee",
+  "diákmunka",
+  "diakmunka",
+  "igazgató",
+  "vezető",
 ];
 
-function isSeniorLike(title) {
-  const normalized = normalizeText(title);
-  return SENIOR_KEYWORDS.some((kw) => normalized.includes(normalizeText(kw)));
-}
-
-const INTERNSHIP_KEYWORDS = [
-  "gyakornok", "intern", "internship", "trainee",
-  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
-];
-
-function isInternshipTitle(title) {
-  const n = normalizeText(title ?? "");
-  return INTERNSHIP_KEYWORDS.some(k => n.includes(k));
-}
 
 function inferTalentExperience(title) {
   const normalized = normalizeText(title);
-  if (INTERNSHIP_KEYWORDS.some(k => normalized.includes(k))) return "diákmunka";
   if (SENIOR_KEYWORDS.some((kw) => normalized.includes(normalizeText(kw))))
     return "senior";
   if (/\bmedior\b|\bmid\b/.test(normalized)) return "medior";
