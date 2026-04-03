@@ -15,7 +15,7 @@ const ALLOWED_ORIGIN =
   process.env.ALLOWED_ORIGIN || "https://marketing-jobs.netlify.app";
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 6;
-const MAX_LIMIT = 300;
+const MAX_LIMIT = 2000;
 const ipHits = globalThis.__marketingJobsIpHits || new Map();
 
 globalThis.__marketingJobsIpHits = ipHits;
