@@ -246,6 +246,11 @@ function isSeniorLike(title, description) {
   return SENIOR_KEYWORDS.some((kw) => normalized.includes(normalizeText(kw)));
 }
 
+function isBudapestLocation(location) {
+  const normalized = normalizeText(location);
+  return normalized.includes("budapest");
+}
+
 function extractMelonJobs(payload) {
   const rows = Array.isArray(payload) ? payload : [];
 
