@@ -8,37 +8,7 @@ const hoursSince = (iso) => {
   return ms / (1000 * 60 * 60);
 };
 
-const JOB_KEYWORD_NOTES = {
-  "social media":
-    "Posztolás, közösségi média kezelés. Kreativitás kell hozzá, de nem feltétlen jól fizető.",
-  seo: "Keresőoptimalizálás. Technikai + tartalmi irány, jó hosszú távon.",
-  sem: "Fizetett hirdetések kezelése (Google Ads, Meta Ads). Analitikus szemlélet kell.",
-  copywriter:
-    "Szövegírás marketinghez. Kreativitás + nyelvi készség, sok freelance lehetőség.",
-  recepciós:
-    "Front desk munka. Kevés fejlődési lehetőség, de belépőszint irodai munkához.",
-  "office assistant":
-    "Általános irodai feladatok. Jó belépő, ha irodai karriert szeretnél.",
-  "office manager":
-    "Irodavezetés, szervezés. Több felelősség, mint az asszisztens pozíció.",
-  koordinátor:
-    "Projektek, események szervezése. Kommunikáció és szervezőkészség fontos.",
-  crm: "Ügyfélkapcsolat-kezelő rendszerek. Technikaibb marketing irány.",
-  "email marketing":
-    "Hírlevél kampányok. Automatizáció + szövegírás kombinációja.",
-  brand: "Márkaépítés, arculat. Stratégiai marketing irány.",
-  "ügyfélszolgálat":
-    "Ügyfélkezelés. Sok türelem kell, de mindenhol keresik.",
-  pr: "Sajtókapcsolatok, kommunikáció. Kapcsolatépítés a lényege.",
-};
 
-const getKeywordNotesForJob = (job) => {
-  if (!job.title) return [];
-  const title = job.title.toLowerCase();
-  return Object.entries(JOB_KEYWORD_NOTES)
-    .filter(([k]) => title.includes(k.toLowerCase()))
-    .map(([, v]) => v);
-};
 
 const MarketingJobs = () => {
   const [jobs, setJobs] = useState([]);
@@ -323,7 +293,6 @@ const MarketingJobs = () => {
         <ul className="mkt-list">
           {visibleJobs.map((job) => {
             const isNew = job.firstSeen && hoursSince(job.firstSeen) <= 1;
-            const notes = getKeywordNotesForJob(job);
             const key = `${job.source}-${job.url || job.title}-${job.firstSeen}`;
 
             return (
