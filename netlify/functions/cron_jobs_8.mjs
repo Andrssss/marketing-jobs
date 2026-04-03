@@ -121,15 +121,6 @@ function dedupeByUrl(items) {
 // Sources (csak az első 4 debugolásra)
 // =====================
 const SOURCES = [
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/marketing-media-pr/budapest/1,12,23,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,marketing,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,5,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,marketing%20asszisztens,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,marketing%20asszisztens,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20brand%20manager,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
   { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,irodai%20adminisztr%c3%a1tor,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
   { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,irodai%20adminisztr%c3%a1tor,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
   { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,irodai%20asszisztens,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
