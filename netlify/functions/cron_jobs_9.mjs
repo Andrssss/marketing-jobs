@@ -11,6 +11,9 @@ import https from "https";
 import http from "http";
 import zlib from "zlib";
 import { load as cheerioLoad } from "cheerio";
+import { loadFilters } from "./load_filters.mjs";
+
+let _filters = [];
 
 /* ---------------------
    DB connection
@@ -37,13 +40,8 @@ function normalizeText(s) {
 
 
 function titleNotBlacklisted(title) {
-  const TITLE_BLACKLIST = [
-  "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
-    "lead", "expert", "vezető fejlesztő", "tech lead",
-    "igazgató", "vezető", "hostess", "head",
-    "mérnök", "mernok", "engineer", "developer", "software", "prompt", "elektrotechnikus", "qa",
-    "német", "spanish", "italian", "french"
-  ];
+  const t = normalizeText(title);
+  return !_filters.some(word => t.includes(normalizeText(word)));
 }
 
 function dedupeByUrl(items) {
@@ -211,18 +209,12 @@ async function upsertJob(client, source, item) {
 }
 
 function levelNotBlacklisted(title, desc) {
-  const LEVEL_BLACKLIST = [
-    "medior", "senior", "lead", "principal", "expert",
-    "staff", "architect", "sr.", "sr ", "sen.",
-    "experienced", "expertise",
-    "gyakornok", "intern", "internship", "trainee", "traineeship",
-    "diákmunka", "diakmunka",
-    "igazgató", "vezető",
-    "német", "head", "spanish", "italian", "french"
-  ];
+  const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
+  return !_filters.some(kw => combined.includes(normalizeText(kw)));
 }
 
 export default async () => {
+_filters = await loadFilters();
 const SOURCES = [
     // TEST
     { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&f_TPR=r86400&keywords=test&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },

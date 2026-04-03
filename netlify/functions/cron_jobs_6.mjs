@@ -407,7 +407,7 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       // =========================
       // BLACKLISTING
       // =========================
-      const BLACKLIST_WORDS = ["marketing", "sales", "oktatásfejlesztő", "support"];
+      const BLACKLIST_WORDS = [ "oktatásfejlesztő", "support"];
       matchedList = matchedList.filter(item => {
         const text = `${item.title ?? ""} ${item.description ?? ""}`.toLowerCase();
         return !BLACKLIST_WORDS.some(word => text.includes(word.toLowerCase()));

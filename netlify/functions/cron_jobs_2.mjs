@@ -12,6 +12,9 @@ import https from "https";
 import http from "http";
 import zlib from "zlib";
 import { load as cheerioLoad } from "cheerio";
+import { loadFilters } from "./load_filters.mjs";
+
+let _filters = [];
 
 /* ---------------------
    DB connection
@@ -227,22 +230,13 @@ async function upsertJob(client, source, item) {
 }
 
 function levelNotBlacklisted(title, desc) {
-  const LEVEL_BLACKLIST = [
-    "medior", "senior", "lead", "principal", "expert",
-    "staff", "architect", "sr.", "sr ", "sen.",
-    "experienced", "expertise",
-    "gyakornok", "intern", "internship", "trainee", "traineeship",
-    "diákmunka", "diakmunka",
-    "igazgató", "vezető",
-    "mérnök", "mernok", "engineer", "developer", "software", "prompt", "elektrotechnikus", "qa",
-    "német", "head", "spanish", "italian", "french"
-  ];
   const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-  return !LEVEL_BLACKLIST.some((kw) => combined.includes(normalizeText(kw)));
+  return !_filters.some(kw => combined.includes(normalizeText(kw)));
 }
 
 export default async () => {
 
+  _filters = await loadFilters();
 
   const SOURCES = [
     { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&f_TPR=r86400&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },

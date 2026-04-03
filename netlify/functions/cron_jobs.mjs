@@ -23,7 +23,10 @@ import http from "node:http";
 import zlib from "node:zlib";
 import { load as cheerioLoad } from "cheerio";
 import pkg from "pg";
+import { loadFilters } from "./load_filters.mjs";
 const { Pool } = pkg;
+
+let _filters = [];
 
 // =====================
 // DB
@@ -130,40 +133,6 @@ const SOURCES = [
 // =====================
 // Keywords
 // =====================
-const TITLE_BLACKLIST = [
-  "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
-    "lead", "expert", "vezető fejlesztő", "tech lead",
-    "igazgató", "vezető",
-    "mérnök", "mernok", "engineer", "developer", "software", "prompt", "elektrotechnikus", "qa",
-    "német", "head", "spanish", "italian", "french"
-];
-
-
-const SENIOR_KEYWORDS = [
-  "senior",
-  "szenior",
-  "medior",
-  "lead",
-  "principal",
-  "staff",
-  "architect",
-  "expert",
-  "vezető fejlesztő",
-  "tech lead",
-  "gyakornok",
-  "intern",
-  "internship",
-  "trainee",
-  "diákmunka",
-  "diakmunka",
-  "igazgató",
-  "vezető",
-];
-
-
-
-
-
 
 
 
@@ -172,7 +141,7 @@ const SENIOR_KEYWORDS = [
 
 function isSeniorLike(title = "", desc = "") {
   const n = normalizeText(`${title} ${desc}`);
-  return SENIOR_KEYWORDS.some(k => n.includes(normalizeText(k)));
+  return _filters.some(k => n.includes(normalizeText(k)));
 }
 
 
@@ -268,24 +237,6 @@ function json(statusCode, obj) {
     headers: { "content-type": "application/json; charset=utf-8" },
     body: JSON.stringify(obj),
   };
-}
-
-
-
-
-
-
-
-
-function keywordHit(title, desc) {
-  const n = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-
-  const hits = [];
-  for (const k of TITLE_BLACKLIST) {
-    const nk = normalizeText(k);
-    if (n.includes(nk)) hits.push(k);
-  }
-  return hits;
 }
 
 
@@ -555,7 +506,7 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       }
 
 
-      const BLACKLIST_WORDS = ["marketing", "sales", "oktatásfejlesztő", "support"];
+      const BLACKLIST_WORDS = [ "oktatásfejlesztő", "support"];
       matchedList = matchedList.filter(item => {
         const text = `${item.title ?? ""} ${item.description ?? ""}`.toLowerCase();
         return !BLACKLIST_WORDS.some(word => text.includes(word.toLowerCase()));
@@ -589,6 +540,7 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
 
 
 export default async (request) => {
+  _filters = await loadFilters();
   const url = new URL(request.url);
 
   const debug = url.searchParams.get("debug") === "1";
