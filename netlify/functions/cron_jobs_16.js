@@ -5,9 +5,7 @@ export const config = {
 
 /* =========================
 const SOURCES = [
-    { key: "bluebird", label: "bluebird", url: "https://bluebird.hu/?feed=job_feed&search_location=Budapest&job_categories=devops-engineer" },
-    { key: "bluebird", label: "bluebird", url: "https://bluebird.hu/?feed=job_feed&search_location=Budapest&job_categories=szoftverfejleszto-szoftvermernok" },
-    { key: "bluebird", label: "bluebird", url: "https://bluebird.hu/?feed=job_feed&search_location=Budapest&job_categories=tesztelo" },
+    { key: "bluebird", label: "bluebird", url: "https://bluebird.hu/?feed=job_feed&search_location=Budapest&job_categories=sales-marketing" },
   ];
 --------------------- */
 
@@ -48,7 +46,7 @@ function titleNotBlacklisted(title) {
   const TITLE_BLACKLIST = [
     "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
     "lead", "expert", "vezető fejlesztő", "tech lead",
-    "igazgató", "vezető"
+    "igazgató", "vezető", 
   ];
   const t = normalizeText(title);
   return !TITLE_BLACKLIST.some(word => t.includes(normalizeText(word)));
@@ -210,9 +208,7 @@ async function fetchRssJobs(url) {
 
 export default async () => {
   const SOURCES = [
-    { key: "bluebird", label: "bluebird", url: "https://bluebird.hu/?feed=job_feed&search_location=Budapest&job_categories=devops-engineer" },
-    { key: "bluebird", label: "bluebird", url: "https://bluebird.hu/?feed=job_feed&search_location=Budapest&job_categories=szoftverfejleszto-szoftvermernok" },
-    { key: "bluebird", label: "bluebird", url: "https://bluebird.hu/?feed=job_feed&search_location=Budapest&job_categories=tesztelo" },
+    { key: "bluebird", label: "bluebird", url: "https://bluebird.hu/?feed=job_feed&search_location=Budapest&job_categories=sales-marketing" },
   ];
   const client = await pool.connect();
   try {
