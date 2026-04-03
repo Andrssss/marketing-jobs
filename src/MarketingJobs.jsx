@@ -156,12 +156,6 @@ const MarketingJobs = () => {
 
         <div className="mkt-actions">
           <a href="/filters" className="mkt-btn" style={{ textDecoration: "none" }}>⚙ Filters</a>
-          <input
-            className="mkt-search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Keresés…"
-          />
 
           <label className="mkt-checkbox">
             <input
@@ -198,6 +192,15 @@ const MarketingJobs = () => {
           </button>
         </div>
       </header>
+
+      {/* Search */}
+      <input
+        className="mkt-search"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Keresés…"
+        style={{ width: "100%", marginBottom: 8 }}
+      />
 
       {/* Sources */}
       <div className="mkt-sources-header">
