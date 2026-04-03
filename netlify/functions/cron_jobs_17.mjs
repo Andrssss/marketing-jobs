@@ -154,16 +154,6 @@ async function deleteExistingSeniorDreamJobs(client) {
         AND (
           LOWER(COALESCE(experience, '')) LIKE '%senior%'
           OR LOWER(COALESCE(title, '')) LIKE '%senior%'
-          OR LOWER(COALESCE(title, '')) LIKE '%szenior%'
-          OR LOWER(COALESCE(title, '')) LIKE '%lead%'
-          OR LOWER(COALESCE(title, '')) LIKE '%principal%'
-          OR LOWER(COALESCE(title, '')) LIKE '%staff%'
-          OR LOWER(COALESCE(title, '')) LIKE '%architect%'
-          OR LOWER(COALESCE(title, '')) LIKE '%expert%'
-          OR LOWER(COALESCE(title, '')) LIKE '%igazgato%'
-          OR LOWER(COALESCE(title, '')) LIKE '%igazgató%'
-          OR LOWER(COALESCE(title, '')) LIKE '%vezeto%'
-          OR LOWER(COALESCE(title, '')) LIKE '%vezető%'
         );`
   );
 
