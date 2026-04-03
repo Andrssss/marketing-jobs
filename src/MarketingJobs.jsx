@@ -50,7 +50,7 @@ const MarketingJobs = () => {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ limit: "300" });
+      const params = new URLSearchParams({ limit: "2000" });
       if (time7d) params.set("timeRange", "7d");
       else if (time24h) params.set("timeRange", "24h");
 
