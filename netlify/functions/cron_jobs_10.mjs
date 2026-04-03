@@ -46,10 +46,9 @@ function titleNotBlacklisted(title) {
  "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
     "lead", "expert", "vezető fejlesztő", "tech lead",
     "igazgató", "vezető", "hostess", "head",
-    "mérnök", "mernok", "engineer", "developer", "software", "prompt", "elektrotechnikus", "qa"
+    "mérnök", "mernok", "engineer", "developer", "software", "prompt", "elektrotechnikus", "qa",
+    "német", "spanish", "italian", "french"
   ];
-  const t = normalizeText(title);
-  return !TITLE_BLACKLIST.some(word => t.includes(normalizeText(word)));
 }
 
 function dedupeByUrl(items) {
@@ -194,10 +193,9 @@ function levelNotBlacklisted(title, desc) {
     "experienced", "expertise",
     "gyakornok", "intern", "internship", "trainee", "traineeship",
     "diákmunka", "diakmunka",
-    "igazgató", "vezető"
+    "igazgató", "vezető",
+    "német", "head", "spanish", "italian", "french"
   ];
-  const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-  return !LEVEL_BLACKLIST.some((kw) => combined.includes(normalizeText(kw)));
 }
 
 const KARRIERHUNGARIA_JOB_PREFIX = "https://karrierhungaria.hu/allasajanlat";

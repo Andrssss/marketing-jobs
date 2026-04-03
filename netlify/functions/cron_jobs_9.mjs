@@ -41,10 +41,9 @@ function titleNotBlacklisted(title) {
   "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
     "lead", "expert", "vezető fejlesztő", "tech lead",
     "igazgató", "vezető", "hostess", "head",
-    "mérnök", "mernok", "engineer", "developer", "software", "prompt", "elektrotechnikus", "qa"
+    "mérnök", "mernok", "engineer", "developer", "software", "prompt", "elektrotechnikus", "qa",
+    "német", "spanish", "italian", "french"
   ];
-  const t = normalizeText(title);
-  return !TITLE_BLACKLIST.some(word => t.includes(normalizeText(word)));
 }
 
 function dedupeByUrl(items) {
@@ -200,14 +199,14 @@ async function upsertJob(client, source, item) {
 
   await client.query(
     `INSERT INTO marketing_job_posts
-      (source, title, url, experience, first_seen)
-     SELECT $1,$2,$3,$4,NOW()
+      (source, title, url, canonical_url, experience, first_seen)
+     SELECT $1,$2,$3,$4,$5,NOW()
      WHERE NOT EXISTS (
-       SELECT 1 FROM marketing_job_posts WHERE source = $1 AND url = $3
+       SELECT 1 FROM marketing_job_posts WHERE source = $1 AND canonical_url = $4
      )
      ON CONFLICT (source, url) WHERE url IS NOT NULL
         DO NOTHING;`,
-    [source, item.title, canonicalUrl, experience]
+    [source, item.title, item.url, canonicalUrl, experience]
   );
 }
 
@@ -218,10 +217,9 @@ function levelNotBlacklisted(title, desc) {
     "experienced", "expertise",
     "gyakornok", "intern", "internship", "trainee", "traineeship",
     "diákmunka", "diakmunka",
-    "igazgató", "vezető"
+    "igazgató", "vezető",
+    "német", "head", "spanish", "italian", "french"
   ];
-  const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-  return !LEVEL_BLACKLIST.some((kw) => combined.includes(normalizeText(kw)));
 }
 
 export default async () => {

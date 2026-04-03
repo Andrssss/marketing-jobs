@@ -134,7 +134,8 @@ const TITLE_BLACKLIST = [
   "senior", "szenior", "medior", "Villamosmérnök ", "ipari", "Építészmérnök",
     "lead", "expert", "vezető fejlesztő", "tech lead",
     "igazgató", "vezető",
-    "mérnök", "mernok", "engineer", "developer", "software", "prompt", "elektrotechnikus", "qa"
+    "mérnök", "mernok", "engineer", "developer", "software", "prompt", "elektrotechnikus", "qa",
+    "német", "head", "spanish", "italian", "french"
 ];
 
 
