@@ -249,17 +249,6 @@ const MarketingJobs = () => {
                   <span className="mkt-card-source">{job.source}</span>
                 </div>
 
-                {notes.length > 0 && (
-                  <div className="mkt-note">
-                    💭 Megjegyzés:
-                    <ul>
-                      {notes.map((n, i) => (
-                        <li key={i}>{n}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
                 <div className="mkt-card-meta">
                   {isNew && <span className="mkt-badge-new">Új</span>}
                   {job.experience && (
