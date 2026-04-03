@@ -147,6 +147,29 @@ async function upsertJob(client, sourceKey, item) {
   );
 }
 
+async function deleteExistingSeniorDreamJobs(client) {
+  const { rowCount } = await client.query(
+    `DELETE FROM marketing_job_posts
+      WHERE source = 'dreamjobs'
+        AND (
+          LOWER(COALESCE(experience, '')) LIKE '%senior%'
+          OR LOWER(COALESCE(title, '')) LIKE '%senior%'
+          OR LOWER(COALESCE(title, '')) LIKE '%szenior%'
+          OR LOWER(COALESCE(title, '')) LIKE '%lead%'
+          OR LOWER(COALESCE(title, '')) LIKE '%principal%'
+          OR LOWER(COALESCE(title, '')) LIKE '%staff%'
+          OR LOWER(COALESCE(title, '')) LIKE '%architect%'
+          OR LOWER(COALESCE(title, '')) LIKE '%expert%'
+          OR LOWER(COALESCE(title, '')) LIKE '%igazgato%'
+          OR LOWER(COALESCE(title, '')) LIKE '%igazgató%'
+          OR LOWER(COALESCE(title, '')) LIKE '%vezeto%'
+          OR LOWER(COALESCE(title, '')) LIKE '%vezető%'
+        );`
+  );
+
+  return rowCount || 0;
+}
+
 /* ── DreamJobs ──────────────────────────────────────────────── */
 
 function buildDreamJobsUrl(job) {
@@ -413,7 +436,10 @@ export default async () => {
 
   try {
     /* DreamJobs */
-    const dreamJobs = (await fetchAllDreamJobs()).filter((job) => !isSeniorLike(job.title, ""));
+    const removedSeniorDreamJobs = await deleteExistingSeniorDreamJobs(client);
+    console.log(`dreamjobs: removed ${removedSeniorDreamJobs} existing senior jobs`);
+
+    const dreamJobs = (await fetchAllDreamJobs()).filter((job) => !isSeniorLike(job.title, job.experience || ""));
     console.log(`dreamjobs: ${dreamJobs.length} jobs found`);
 
     for (const job of dreamJobs) {

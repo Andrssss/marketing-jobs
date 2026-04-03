@@ -295,6 +295,11 @@ export default async () => {
   try {
     /* talent.com */
     const rawJobs = (await fetchAllTalentJobs()).filter((job) => !isSeniorLike(job.title));
+    // Seniority filter helper (copied from cron_jobs_17.mjs)
+    function isSeniorLike(title, description) {
+      const normalized = normalizeText(`${title ?? ""} ${description ?? ""}`);
+      return SENIOR_KEYWORDS.some((kw) => normalized.includes(normalizeText(kw)));
+    }
     const talentJobs = await enrichTalentJobs(rawJobs);
     console.log(`talent: ${talentJobs.length} unique jobs found (after senior + 24h filter)`);
 
