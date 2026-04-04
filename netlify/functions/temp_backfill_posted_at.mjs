@@ -1,11 +1,10 @@
+export const config = {
+  schedule: "50 * * * *",
+};
+
 /**
- * TEMP SCRIPT – Backfill posted_at for LinkedIn jobs from the last 24h.
- *
- * 1. Fetches LinkedIn search pages (same URLs as the cron jobs)
- * 2. Extracts job URL + datetime from each card
- * 3. Updates existing rows in marketing_job_posts that have posted_at IS NULL
- *
- * Deploy, run once via /.netlify/functions/temp_backfill_posted_at, then delete.
+ * TEMP SCRIPT – Backfill posted_at for LinkedIn jobs from the last 5h.
+ * Scheduled function – delete after first successful run.
  */
 
 import { Pool } from "pg";
