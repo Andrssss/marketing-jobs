@@ -168,16 +168,16 @@ export default async () => {
 
     console.log(`backfill: ${jobMap.size} unique LinkedIn jobs with posted dates`);
 
-    // Step 2: Get existing LinkedIn jobs from last 24h that have no posted_at
+    // Step 2: Get existing LinkedIn jobs from last 5h that have no posted_at
     const { rows } = await client.query(
       `SELECT id, url, canonical_url
        FROM marketing_job_posts
        WHERE source = 'LinkedIn'
-         AND first_seen >= NOW() - INTERVAL '24 hours'
+         AND first_seen >= NOW() - INTERVAL '5 hours'
          AND posted_at IS NULL`
     );
 
-    console.log(`backfill: ${rows.length} LinkedIn jobs from last 24h without posted_at`);
+    console.log(`backfill: ${rows.length} LinkedIn jobs from last 5h without posted_at`);
 
     // Step 3: Update
     let updated = 0;
