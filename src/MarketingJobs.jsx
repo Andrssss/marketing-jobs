@@ -3,6 +3,19 @@ import "./MarketingJobs.css";
 
 const API = "/.netlify/functions/marketing-jobs";
 
+const CATEGORIES = [
+  { key: "marketing", label: "Marketing", pattern: /marketing|social media|seo|sem|\bcontent\b|brand|digital|kampány|kampany|kommunikáci/i },
+  { key: "sales", label: "Sales", pattern: /sales|értékesít|ertekesit|account|business develop|üzletfejleszt|kereskedelm/i },
+  { key: "admin", label: "Admin/Asszisztens", pattern: /asszisztens|assistant|\badmin/i },
+  { key: "office", label: "Irodai", pattern: /irodai|office|recepci|titkár|titkar/i },
+  { key: "manager", label: "Menedzser", pattern: /manager|menedzser|vezető|vezeto|\blead\b|head of|igazgató|igazgato|director/i },
+  { key: "analytics", label: "Analitika/Data", pattern: /analiti|analyst|\bdata\b|elemz/i },
+  { key: "customer", label: "Ügyfélszolg.", pattern: /ügyfél|ugyfel|customer|call center/i },
+  { key: "hr", label: "HR", pattern: /\bhr\b|human resource|toborzó|toborzo|recrui/i },
+  { key: "finance", label: "Pénzügy", pattern: /pénzügy|penzugy|finance|könyvelő|konyvelo|számvitel|szamvitel|controller|bérszámfejt|payroll/i },
+  { key: "project", label: "Projekt", pattern: /projekt|project/i },
+];
+
 const hoursSince = (iso) => {
   const ms = Date.now() - new Date(iso).getTime();
   return ms / (1000 * 60 * 60);
@@ -29,6 +42,16 @@ const MarketingJobs = () => {
   const [time7d, setTime7d] = useState(() => {
     const saved = localStorage.getItem("marketingTime7d");
     return saved === null ? false : saved === "true";
+  });
+
+  const [catStates, setCatStates] = useState(() => {
+    const saved = localStorage.getItem("marketingCatStates");
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const [catsOpen, setCatsOpen] = useState(() => {
+    const saved = localStorage.getItem("marketingCatsOpen");
+    return saved !== null ? saved === "true" : true;
   });
 
   const [sourcesOpen, setSourcesOpen] = useState(() => {
@@ -106,6 +129,22 @@ const MarketingJobs = () => {
     });
   };
 
+  /* Category toggle (3-state) */
+  const handleCatClick = (key) => {
+    setCatStates((prev) => {
+      const current = prev[key] || "neutral";
+      const next =
+        current === "neutral"
+          ? "selected"
+          : current === "selected"
+          ? "excluded"
+          : "neutral";
+      const updated = { ...prev, [key]: next };
+      localStorage.setItem("marketingCatStates", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   /* Filtered list */
   const visibleJobs = useMemo(() => {
     let list = jobs;
@@ -136,10 +175,25 @@ const MarketingJobs = () => {
       list = list.filter((j) => !excluded.includes(j.source));
     }
 
+    /* Category filter */
+    const selCats = Object.keys(catStates).filter((k) => catStates[k] === "selected");
+    const exCats = Object.keys(catStates).filter((k) => catStates[k] === "excluded");
+
+    const matchesCat = (title, catKey) => {
+      const cat = CATEGORIES.find((c) => c.key === catKey);
+      return cat ? cat.pattern.test(title || "") : false;
+    };
+
+    if (selCats.length) {
+      list = list.filter((j) => selCats.some((ck) => matchesCat(j.title, ck)));
+    } else if (exCats.length) {
+      list = list.filter((j) => !exCats.some((ck) => matchesCat(j.title, ck)));
+    }
+
     return [...list].sort(
       (a, b) => new Date(b.firstSeen || 0) - new Date(a.firstSeen || 0)
     );
-  }, [jobs, q, time24h, time7d, sourceStates]);
+  }, [jobs, q, time24h, time7d, sourceStates, catStates]);
 
   const activeTimeLabel = time7d ? "1 hét" : time24h ? "24h" : "mind";
 
@@ -199,6 +253,43 @@ const MarketingJobs = () => {
           </button>
         </div>
       </header>
+
+      {/* Categories */}
+      <div className="mkt-sources-header">
+        <button
+          className="mkt-sources-toggle"
+          onClick={() =>
+            setCatsOpen((prev) => {
+              localStorage.setItem("marketingCatsOpen", !prev);
+              return !prev;
+            })
+          }
+        >
+          {catsOpen ? "▲ Kategóriák elrejtése" : "▼ Kategóriák"}
+        </button>
+      </div>
+
+      <div className={`mkt-sources-wrapper ${catsOpen ? "open" : ""}`}>
+        <div className="mkt-sources">
+          {CATEGORIES.map((cat) => {
+            const state = catStates[cat.key] || "neutral";
+            let cls = "mkt-source-btn";
+            if (state === "selected") cls += " selected";
+            if (state === "excluded") cls += " excluded";
+            const count = jobs.filter((j) => cat.pattern.test(j.title || "")).length;
+            return (
+              <button
+                key={cat.key}
+                className={cls}
+                onClick={() => handleCatClick(cat.key)}
+              >
+                {cat.label}
+                <span className="mkt-source-count">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Sources */}
       <div className="mkt-sources-header">
