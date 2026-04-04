@@ -27,4 +27,8 @@ CREATE INDEX IF NOT EXISTS idx_marketing_job_posts_source
 CREATE UNIQUE INDEX IF NOT EXISTS idx_marketing_job_posts_source_url
   ON marketing_job_posts (source, url)
   WHERE url IS NOT NULL;
+
+-- Posted date from LinkedIn (when the job was originally posted)
+ALTER TABLE marketing_job_posts ADD COLUMN IF NOT EXISTS posted_at TIMESTAMPTZ;
+
   ON marketing_filters (category, LOWER(word));

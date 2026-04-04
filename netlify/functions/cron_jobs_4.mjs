@@ -180,7 +180,9 @@ function extractLinkedInJobs(html) {
     const company = normalizeText($(el).find("h4.base-search-card__subtitle").text());
     const location = normalizeText($(el).find("span.job-search-card__location").text());
     const url = $(el).find("a.base-card__full-link").attr("href");
-    if (title && url) jobs.push({ title, url, company, location });
+    const timeEl = $(el).find("time");
+    const postedAt = timeEl.attr("datetime") || null;
+    if (title && url) jobs.push({ title, url, company, location, postedAt });
   });
 
   return dedupeByUrl(jobs);
@@ -218,14 +220,14 @@ async function upsertJob(client, source, item) {
 
   await client.query(
     `INSERT INTO marketing_job_posts
-      (source, title, url, canonical_url, experience, first_seen)
-     SELECT $1,$2,$3,$4,$5,NOW()
+      (source, title, url, canonical_url, experience, first_seen, posted_at)
+     SELECT $1,$2,$3,$4,$5,NOW(),$6
      WHERE NOT EXISTS (
        SELECT 1 FROM marketing_job_posts WHERE source = $1 AND canonical_url = $4
      )
      ON CONFLICT (source, url) WHERE url IS NOT NULL
-        DO NOTHING;`,
-    [source, item.title, item.url, canonicalUrl, experience]
+        DO UPDATE SET posted_at = COALESCE(EXCLUDED.posted_at, marketing_job_posts.posted_at);`,
+    [source, item.title, item.url, canonicalUrl, experience, item.postedAt || null]
   );
 }
 
