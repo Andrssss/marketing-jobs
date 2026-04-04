@@ -17,6 +17,9 @@ import zlib from "node:zlib";
 import { load as cheerioLoad } from "cheerio";
 import pkg from "pg";
 const { Pool } = pkg;
+import { loadFilters } from "./load_filters.mjs";
+
+let _filters = [];
 
 // =====================
 // DB
@@ -117,35 +120,9 @@ const SOURCES = [
 
 
 
-const SENIOR_KEYWORDS = [
-  "senior",
-  "szenior",
-  "medior",
-  "lead",
-  "principal",
-  "staff",
-  "architect",
-  "expert",
-  "vezető fejlesztő",
-  "tech lead",
-  "gyakornok",
-  "intern",
-  "internship",
-  "trainee",
-  "diákmunka",
-  "diakmunka",
-];
-
-
-
-
-
-
-
-
-function isSeniorLike(title = "", desc = "") {
-  const n = normalizeText(`${title} ${desc}`);
-  return SENIOR_KEYWORDS.some(k => n.includes(normalizeText(k)));
+function titleNotBlacklisted(title, desc) {
+  const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
+  return !_filters.some(kw => combined.includes(normalizeText(kw)));
 }
 
 
@@ -400,18 +377,14 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       // FILTER & KEYWORD MATCH
       // =========================
       let matchedList = merged
-        .filter((c) => !isSeniorLike(c.title, c.description));
+        .filter((c) => titleNotBlacklisted(c.title, c.description));
 
 
 
       // =========================
       // BLACKLISTING
       // =========================
-      const BLACKLIST_WORDS = [ "oktatásfejlesztő", "support"];
-      matchedList = matchedList.filter(item => {
-        const text = `${item.title ?? ""} ${item.description ?? ""}`.toLowerCase();
-        return !BLACKLIST_WORDS.some(word => text.includes(word.toLowerCase()));
-      });
+
 
       // =========================
       // DEBUG REJECTED
@@ -438,6 +411,7 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
 
 
 export default async (request) => {
+  _filters = await loadFilters();
   const url = new URL(request.url);
 
   const debug = url.searchParams.get("debug") === "1";

@@ -13,6 +13,9 @@ import https from "https";
 import http from "http";
 import zlib from "zlib";
 import { load as cheerioLoad } from "cheerio";
+import { loadFilters } from "./load_filters.mjs";
+
+let _filters = [];
 
 const connectionString = process.env.NETLIFY_DATABASE_URL;
 if (!connectionString) throw new Error("NETLIFY_DATABASE_URL is not set");
@@ -290,16 +293,16 @@ async function enrichTalentJobs(jobs) {
 /* ── handler ────────────────────────────────────────────────── */
 
 export default async () => {
+  _filters = await loadFilters();
   const client = await pool.connect();
 
   try {
     /* talent.com */
-    const rawJobs = (await fetchAllTalentJobs()).filter((job) => !isSeniorLike(job.title));
-    // Seniority filter helper (copied from cron_jobs_17.mjs)
-    function isSeniorLike(title, description) {
-      const normalized = normalizeText(`${title ?? ""} ${description ?? ""}`);
-      return SENIOR_KEYWORDS.some((kw) => normalized.includes(normalizeText(kw)));
+    function titleNotBlacklisted(title) {
+      const t = normalizeText(title);
+      return !_filters.some(word => t.includes(normalizeText(word)));
     }
+    const rawJobs = (await fetchAllTalentJobs()).filter((job) => titleNotBlacklisted(job.title));
     const talentJobs = await enrichTalentJobs(rawJobs);
     console.log(`talent: ${talentJobs.length} unique jobs found (after senior + 24h filter)`);
 

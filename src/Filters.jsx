@@ -8,6 +8,8 @@ const Filters = () => {
   const [loading, setLoading] = useState(true);
   const [newWord, setNewWord] = useState("");
   const [error, setError] = useState(null);
+  const [undoItem, setUndoItem] = useState(null);
+  const undoTimer = React.useRef(null);
 
   const load = async () => {
     try {
@@ -43,6 +45,7 @@ const Filters = () => {
   };
 
   const remove = async (id) => {
+    const removed = filters.find(f => f.id === id);
     setError(null);
     try {
       await fetch(API, {
@@ -51,6 +54,29 @@ const Filters = () => {
         body: JSON.stringify({ id }),
       });
       setFilters(prev => prev.filter(f => f.id !== id));
+      clearTimeout(undoTimer.current);
+      setUndoItem(removed);
+      undoTimer.current = setTimeout(() => setUndoItem(null), 8000);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const undo = async () => {
+    if (!undoItem) return;
+    clearTimeout(undoTimer.current);
+    const word = undoItem.word;
+    setUndoItem(null);
+    setError(null);
+    try {
+      const res = await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error); return; }
+      setFilters(prev => [...prev, data].sort((a, b) => a.word.localeCompare(b.word)));
     } catch (e) {
       setError(e.message);
     }
@@ -101,6 +127,14 @@ const Filters = () => {
               <span style={{ color: "#666", fontSize: 14 }}>Nincs szó a listában.</span>
             )}
           </div>
+        </div>
+      )}
+
+      {undoItem && (
+        <div className="undo-toast">
+          <span>Törölve: <strong>{undoItem.word}</strong></span>
+          <button className="undo-toast-btn" onClick={undo}>Visszavonás</button>
+          <button className="undo-toast-close" onClick={() => { clearTimeout(undoTimer.current); setUndoItem(null); }}>×</button>
         </div>
       )}
     </div>

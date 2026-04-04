@@ -13,6 +13,9 @@ import https from "https";
 import http from "http";
 import zlib from "zlib";
 import { load as cheerioLoad } from "cheerio";
+import { loadFilters } from "./load_filters.mjs";
+
+let _filters = [];
 
 const connectionString = process.env.NETLIFY_DATABASE_URL;
 if (!connectionString) throw new Error("NETLIFY_DATABASE_URL is not set");
@@ -141,13 +144,13 @@ async function upsertJob(client, sourceKey, item) {
   );
 }
 
-async function deleteExistingSeniorDreamJobs(client) {
+async function deleteExistingBlacklistedDreamJobs(client) {
   const { rowCount } = await client.query(
     `DELETE FROM marketing_job_posts
       WHERE source = 'dreamjobs'
-        AND (
-          LOWER(COALESCE(experience, '')) LIKE '%senior%'
-          OR LOWER(COALESCE(title, '')) LIKE '%senior%'
+        AND EXISTS (
+          SELECT 1 FROM marketing_filters f
+          WHERE LOWER(marketing_job_posts.title) LIKE '%' || LOWER(f.word) || '%'
         );`
   );
 
@@ -218,39 +221,17 @@ async function fetchAllDreamJobs() {
 
 /* ── MelonJobs ──────────────────────────────────────────────── */
 
-const SENIOR_KEYWORDS = [
-  "senior",
-  "szenior",
-  "lead",
-  "principal",
-  "staff",
-  "architect",
-  "expert",
-  "vezető fejlesztő",
-  "tech lead",
-  "gyakornok",
-  "intern",
-  "internship",
-  "trainee",
-  "diákmunka",
-  "diakmunka",
-  "igazgató",
-  "vezető",
-];
-
 function inferExperience(title, description) {
   const normalized = normalizeText(`${title ?? ""} ${description ?? ""}`);
-
-  if (SENIOR_KEYWORDS.some((kw) => normalized.includes(normalizeText(kw)))) return "senior";
+  if (!titleNotBlacklisted(title, description)) return "senior";
   if (/\bmedior\b/.test(normalized)) return "medior";
   if (/\bjunior\b|\bpalyakezdo\b|\bentry level\b/.test(normalized)) return "junior";
-
   return null;
 }
 
-function isSeniorLike(title, description) {
-  const normalized = normalizeText(`${title ?? ""} ${description ?? ""}`);
-  return SENIOR_KEYWORDS.some((kw) => normalized.includes(normalizeText(kw)));
+function titleNotBlacklisted(title, desc) {
+  const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
+  return !_filters.some(kw => combined.includes(normalizeText(kw)));
 }
 
 function isBudapestLocation(location) {
@@ -278,7 +259,7 @@ function extractMelonJobs(payload) {
     })
     .filter((job) => job.title && job.url)
     .filter((job) => isBudapestLocation(job.location))
-    .filter((job) => !isSeniorLike(job.title, job.description));
+    .filter((job) => titleNotBlacklisted(job.title, job.description));
 }
 
 async function fetchAllMelonJobs() {
@@ -304,14 +285,15 @@ async function fetchAllMelonJobs() {
 /* ── handler ────────────────────────────────────────────────── */
 
 export default async () => {
+  _filters = await loadFilters();
   const client = await pool.connect();
 
   try {
     /* DreamJobs */
-    const removedSeniorDreamJobs = await deleteExistingSeniorDreamJobs(client);
-    console.log(`dreamjobs: removed ${removedSeniorDreamJobs} existing senior jobs`);
+    const removedBlacklisted = await deleteExistingBlacklistedDreamJobs(client);
+    console.log(`dreamjobs: removed ${removedBlacklisted} existing blacklisted jobs`);
 
-    const dreamJobs = (await fetchAllDreamJobs()).filter((job) => !isSeniorLike(job.title, job.experience || ""));
+    const dreamJobs = (await fetchAllDreamJobs()).filter((job) => titleNotBlacklisted(job.title, job.experience || ""));
     console.log(`dreamjobs: ${dreamJobs.length} jobs found`);
 
     for (const job of dreamJobs) {
