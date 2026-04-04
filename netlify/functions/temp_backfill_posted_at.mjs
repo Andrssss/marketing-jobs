@@ -167,22 +167,25 @@ export default async () => {
 
     console.log(`backfill: ${jobMap.size} unique LinkedIn jobs with posted dates`);
 
-    // Step 2: Get existing LinkedIn jobs from last 5h that have no posted_at
+    // Step 1.5: Ensure posted_at column exists
+    await client.query(`ALTER TABLE marketing_job_posts ADD COLUMN IF NOT EXISTS posted_at TIMESTAMPTZ`);
+
+    // Step 2: Get ALL LinkedIn jobs that have no posted_at (no time limit)
     const { rows } = await client.query(
       `SELECT id, url, canonical_url
        FROM marketing_job_posts
        WHERE source = 'LinkedIn'
-         AND first_seen >= NOW() - INTERVAL '5 hours'
          AND posted_at IS NULL`
     );
 
-    console.log(`backfill: ${rows.length} LinkedIn jobs from last 5h without posted_at`);
+    console.log(`backfill: ${rows.length} LinkedIn jobs without posted_at`);
 
-    // Step 3: Update
+    // Step 3: Update - try both canonical_url and raw url matching
     let updated = 0;
     for (const row of rows) {
       const canonical = row.canonical_url || canonicalizeLinkedInJobUrl(row.url);
-      const postedAt = jobMap.get(canonical);
+      const rawCanonical = canonicalizeLinkedInJobUrl(row.url);
+      const postedAt = jobMap.get(canonical) || jobMap.get(rawCanonical) || jobMap.get(row.url);
       if (postedAt) {
         await client.query(
           `UPDATE marketing_job_posts SET posted_at = $1 WHERE id = $2`,
@@ -191,6 +194,12 @@ export default async () => {
         updated++;
       }
     }
+
+    // Debug: log a few examples from each side
+    const mapKeys = [...jobMap.keys()].slice(0, 3);
+    const dbUrls = rows.slice(0, 3).map(r => ({ canonical_url: r.canonical_url, url_canonical: canonicalizeLinkedInJobUrl(r.url) }));
+    console.log(`backfill: sample scraped URLs: ${JSON.stringify(mapKeys)}`);
+    console.log(`backfill: sample DB URLs: ${JSON.stringify(dbUrls)}`);
 
     const msg = `backfill: updated ${updated}/${rows.length} rows with posted_at`;
     console.log(msg);
