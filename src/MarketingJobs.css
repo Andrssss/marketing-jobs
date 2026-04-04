@@ -477,29 +477,46 @@ html, body {
   color: #ff6b6b;
 }
 
-/* ===== UNDO TOAST ===== */
-.undo-toast {
+/* ===== UNDO TOAST STACK ===== */
+.undo-stack {
   position: fixed;
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  align-items: center;
-  gap: 14px;
-  background: #1e1e2e;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 12px 18px;
-  color: #e4e4e7;
-  font-size: 14px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  flex-direction: column-reverse;
+  gap: 8px;
   z-index: 1000;
-  animation: undo-slide-up 0.25s ease;
+  pointer-events: none;
+}
+
+.undo-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(30, 30, 46, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 16px;
+  color: #e4e4e7;
+  font-size: 13px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  animation: undo-slide-up 0.2s ease;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.undo-toast-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @keyframes undo-slide-up {
-  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .undo-toast-btn {

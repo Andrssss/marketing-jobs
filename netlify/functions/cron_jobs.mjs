@@ -256,7 +256,12 @@ function looksLikeJobUrl(sourceKey, url) {
   ];
   if (bad.some(p => u.pathname.startsWith(p))) return false;
 
-  if (sourceKey === "nofluffjobs" && !url.startsWith("https://nofluffjobs.com/hu/job/")) return false;
+  if (sourceKey === "nofluffjobs") {
+    if (!url.startsWith("https://nofluffjobs.com/hu/job/")) return false;
+    // szponzorált hirdetések más városokból is megjelenhetnek — csak budapest-i URL-eket engedünk
+    const slug = u.pathname.replace("/hu/job/", "");
+    if (!slug.includes("budapest")) return false;
+  }
 
   if (sourceKey === "wherewework" && !(url.startsWith("https://www.wherewework.hu/en/jobs/") && /\/\d+$/.test(u.pathname))) return false;
 

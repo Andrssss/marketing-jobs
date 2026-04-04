@@ -8,8 +8,8 @@ const Filters = () => {
   const [loading, setLoading] = useState(true);
   const [newWord, setNewWord] = useState("");
   const [error, setError] = useState(null);
-  const [undoItem, setUndoItem] = useState(null);
-  const undoTimer = React.useRef(null);
+  const [undoStack, setUndoStack] = useState([]);
+  const undoTimers = React.useRef({});
 
   const load = async () => {
     try {
@@ -54,25 +54,27 @@ const Filters = () => {
         body: JSON.stringify({ id }),
       });
       setFilters(prev => prev.filter(f => f.id !== id));
-      clearTimeout(undoTimer.current);
-      setUndoItem(removed);
-      undoTimer.current = setTimeout(() => setUndoItem(null), 8000);
+      const uid = Date.now() + "-" + id;
+      setUndoStack(prev => [...prev, { ...removed, uid }]);
+      undoTimers.current[uid] = setTimeout(() => {
+        setUndoStack(prev => prev.filter(u => u.uid !== uid));
+        delete undoTimers.current[uid];
+      }, 8000);
     } catch (e) {
       setError(e.message);
     }
   };
 
-  const undo = async () => {
-    if (!undoItem) return;
-    clearTimeout(undoTimer.current);
-    const word = undoItem.word;
-    setUndoItem(null);
+  const undo = async (item) => {
+    clearTimeout(undoTimers.current[item.uid]);
+    delete undoTimers.current[item.uid];
+    setUndoStack(prev => prev.filter(u => u.uid !== item.uid));
     setError(null);
     try {
       const res = await fetch(API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ word }),
+        body: JSON.stringify({ word: item.word }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
@@ -80,6 +82,12 @@ const Filters = () => {
     } catch (e) {
       setError(e.message);
     }
+  };
+
+  const dismissUndo = (item) => {
+    clearTimeout(undoTimers.current[item.uid]);
+    delete undoTimers.current[item.uid];
+    setUndoStack(prev => prev.filter(u => u.uid !== item.uid));
   };
 
   return (
@@ -127,11 +135,15 @@ const Filters = () => {
         </div>
       )}
 
-      {undoItem && (
-        <div className="undo-toast">
-          <span>Törölve: <strong>{undoItem.word}</strong></span>
-          <button className="undo-toast-btn" onClick={undo}>Visszavonás</button>
-          <button className="undo-toast-close" onClick={() => { clearTimeout(undoTimer.current); setUndoItem(null); }}>×</button>
+      {undoStack.length > 0 && (
+        <div className="undo-stack">
+          {undoStack.map(item => (
+            <div key={item.uid} className="undo-toast">
+              <span className="undo-toast-text">Törölve: <strong>{item.word}</strong></span>
+              <button className="undo-toast-btn" onClick={() => undo(item)}>↩ Visszavonás</button>
+              <button className="undo-toast-close" onClick={() => dismissUndo(item)}>×</button>
+            </div>
+          ))}
         </div>
       )}
     </div>
