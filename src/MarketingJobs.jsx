@@ -302,7 +302,7 @@ const MarketingJobs = () => {
             })
           }
         >
-          {sourcesOpen ? "▲ Források elrejtése" : "▼ Források kiválasztása"}
+          {sourcesOpen ? "▲ Források elrejtése" : "▼ Források"}
         </button>
       </div>
 

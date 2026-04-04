@@ -480,12 +480,11 @@ html, body {
 /* ===== UNDO TOAST STACK ===== */
 .undo-stack {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 28px;
+  right: 24px;
   display: flex;
   flex-direction: column-reverse;
-  gap: 8px;
+  gap: 10px;
   z-index: 1000;
   pointer-events: none;
 }
@@ -493,16 +492,19 @@ html, body {
 .undo-toast {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: rgba(30, 30, 46, 0.95);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 10px 16px;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(30, 30, 50, 0.92), rgba(40, 36, 60, 0.92));
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 20px;
   color: #e4e4e7;
   font-size: 13px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  animation: undo-slide-up 0.2s ease;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  animation: undo-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: auto;
   white-space: nowrap;
 }
@@ -512,27 +514,35 @@ html, body {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: 0.01em;
 }
 
-@keyframes undo-slide-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+.undo-toast-text strong {
+  color: #c4b5fd;
+}
+
+@keyframes undo-slide-in {
+  from { opacity: 0; transform: translateX(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
 }
 
 .undo-toast-btn {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 6px 14px;
+  padding: 7px 16px;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
-  transition: transform 0.1s ease;
+  letter-spacing: 0.02em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
 .undo-toast-btn:hover {
   transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.45);
 }
 
 .undo-toast-close {

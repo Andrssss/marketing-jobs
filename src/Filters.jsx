@@ -141,7 +141,6 @@ const Filters = () => {
             <div key={item.uid} className="undo-toast">
               <span className="undo-toast-text">Törölve: <strong>{item.word}</strong></span>
               <button className="undo-toast-btn" onClick={() => undo(item)}>↩ Visszavonás</button>
-              <button className="undo-toast-close" onClick={() => dismissUndo(item)}>×</button>
             </div>
           ))}
         </div>
