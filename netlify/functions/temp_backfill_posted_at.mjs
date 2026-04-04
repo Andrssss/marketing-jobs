@@ -99,112 +99,66 @@ function fetchText(url, redirectLeft = 5) {
   });
 }
 
-function extractLinkedInJobsWithDates(html) {
+function extractPostedDateFromJobPage(html) {
   const $ = cheerioLoad(html);
-  const jobs = [];
-
-  $("ul.jobs-search__results-list li").each((_, el) => {
-    const url = $(el).find("a.base-card__full-link").attr("href");
-    const timeEl = $(el).find("time");
-    const postedAt = timeEl.attr("datetime") || null;
-    if (url && postedAt) {
-      jobs.push({ url, canonicalUrl: canonicalizeLinkedInJobUrl(url), postedAt });
-    }
-  });
-
-  return jobs;
+  // LinkedIn job detail pages have a <time> with datetime in the top card
+  const timeEl = $("time").first();
+  if (timeEl.length && timeEl.attr("datetime")) {
+    return timeEl.attr("datetime");
+  }
+  // Fallback: look for span with "ago" text pattern and parse from meta
+  const metaDate = $('meta[property="og:updated_time"], meta[property="article:published_time"]').attr("content");
+  if (metaDate) return metaDate;
+  return null;
 }
-
-/* Representative LinkedIn search URLs from the cron jobs */
-const SEARCH_URLS = [
-  // Marketing
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r86400&keywords=Marketing&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=1&f_TPR=r86400&keywords=Marketing&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r604800&keywords=Marketing&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=1&f_TPR=r604800&keywords=Marketing&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?keywords=Marketing&location=Budapest",
-  // Online Marketing
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r86400&keywords=Online%20Marketing&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=1&f_TPR=r86400&keywords=Online%20Marketing&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r604800&keywords=Online%20Marketing&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?keywords=Online%20Marketing&location=Budapest",
-  // Market Analysis
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r86400&keywords=Market%20Analysis&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=1&f_TPR=r86400&keywords=Market%20Analysis&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?keywords=Market%20Analysis&location=Budapest",
-  // Market Research
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r86400&keywords=Market%20Research&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=1&f_TPR=r86400&keywords=Market%20Research&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?keywords=Market%20Research&location=Budapest",
-  // Test
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r86400&keywords=test&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=1&f_TPR=r86400&keywords=test&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r86400&keywords=teszt&location=Budapest",
-  "https://www.linkedin.com/jobs/search/?distance=10&f_E=1&f_TPR=r86400&keywords=teszt&location=Budapest",
-];
 
 export default async () => {
   const client = await pool.connect();
-  const jobMap = new Map(); // canonicalUrl -> postedAt
 
   try {
-    // Step 1: Scrape LinkedIn for posted dates
-    for (const searchUrl of SEARCH_URLS) {
-      try {
-        const html = await fetchText(searchUrl);
-        const jobs = extractLinkedInJobsWithDates(html);
-        for (const j of jobs) {
-          if (!jobMap.has(j.canonicalUrl)) {
-            jobMap.set(j.canonicalUrl, j.postedAt);
-          }
-        }
-        console.log(`backfill: ${searchUrl.match(/keywords=([^&]+)/)?.[1] || "?"} → ${jobs.length} jobs with dates`);
-      } catch (err) {
-        console.log(`backfill: failed ${searchUrl}: ${err.message}`);
-      }
-      await sleep(1500);
-    }
-
-    console.log(`backfill: ${jobMap.size} unique LinkedIn jobs with posted dates`);
-
-    // Step 1.5: Ensure posted_at column exists
+    // Step 1: Ensure posted_at column exists
     await client.query(`ALTER TABLE marketing_job_posts ADD COLUMN IF NOT EXISTS posted_at TIMESTAMPTZ`);
 
-    // Step 2: Get ALL LinkedIn jobs that have no posted_at (no time limit)
+    // Step 2: Get all LinkedIn jobs without posted_at
     const { rows } = await client.query(
-      `SELECT id, url, canonical_url
+      `SELECT id, url, title
        FROM marketing_job_posts
        WHERE source = 'LinkedIn'
-         AND posted_at IS NULL`
+         AND posted_at IS NULL
+       ORDER BY first_seen DESC`
     );
 
     console.log(`backfill: ${rows.length} LinkedIn jobs without posted_at`);
 
-    // Step 3: Update - try both canonical_url and raw url matching
+    // Step 3: Visit each job page and extract posted date
     let updated = 0;
-    for (const row of rows) {
-      const canonical = row.canonical_url || canonicalizeLinkedInJobUrl(row.url);
-      const rawCanonical = canonicalizeLinkedInJobUrl(row.url);
-      const postedAt = jobMap.get(canonical) || jobMap.get(rawCanonical) || jobMap.get(row.url);
-      if (postedAt) {
-        await client.query(
-          `UPDATE marketing_job_posts SET posted_at = $1 WHERE id = $2`,
-          [postedAt, row.id]
-        );
-        updated++;
+    let failed = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        const html = await fetchText(row.url);
+        const postedAt = extractPostedDateFromJobPage(html);
+        if (postedAt) {
+          await client.query(
+            `UPDATE marketing_job_posts SET posted_at = $1 WHERE id = $2`,
+            [postedAt, row.id]
+          );
+          updated++;
+          console.log(`backfill: [${i + 1}/${rows.length}] ${row.title} → ${postedAt}`);
+        } else {
+          console.log(`backfill: [${i + 1}/${rows.length}] ${row.title} → no date found`);
+        }
+      } catch (err) {
+        failed++;
+        console.log(`backfill: [${i + 1}/${rows.length}] FAIL ${row.title}: ${err.message}`);
       }
+      if (i < rows.length - 1) await sleep(1000);
     }
 
-    // Debug: log a few examples from each side
-    const mapKeys = [...jobMap.keys()].slice(0, 3);
-    const dbUrls = rows.slice(0, 3).map(r => ({ canonical_url: r.canonical_url, url_canonical: canonicalizeLinkedInJobUrl(r.url) }));
-    console.log(`backfill: sample scraped URLs: ${JSON.stringify(mapKeys)}`);
-    console.log(`backfill: sample DB URLs: ${JSON.stringify(dbUrls)}`);
-
-    const msg = `backfill: updated ${updated}/${rows.length} rows with posted_at`;
+    const msg = `backfill: updated ${updated}/${rows.length} (${failed} failed)`;
     console.log(msg);
 
-    return new Response(JSON.stringify({ ok: true, scraped: jobMap.size, candidates: rows.length, updated }), {
+    return new Response(JSON.stringify({ ok: true, total: rows.length, updated, failed }), {
       headers: { "Content-Type": "application/json" },
     });
   } finally {
