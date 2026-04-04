@@ -87,10 +87,7 @@ const Filters = () => {
       <div className="mkt-header">
         <div>
           <h1>Filters</h1>
-          <p className="mkt-subtitle">
-            Blacklist szavak kezelése — a cron job-ok innen olvassák.
-            <a href="/" style={{ marginLeft: 16, color: "#9b8ec4" }}>← Vissza</a>
-          </p>
+          <a href="/" className="mkt-btn" style={{ textDecoration: "none", display: "inline-block", marginTop: 8 }}>← Vissza</a>
         </div>
       </div>
 
