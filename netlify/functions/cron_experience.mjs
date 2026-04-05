@@ -1,5 +1,5 @@
 export const config = {
-  schedule: "26 4-23 * * *",
+  schedule: "27 4-23 * * *",
 };
 
 /* =========================
