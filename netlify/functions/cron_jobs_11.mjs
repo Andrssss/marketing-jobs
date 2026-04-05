@@ -13,6 +13,7 @@ import http from "http";
 import zlib from "zlib";
 import { load as cheerioLoad } from "cheerio";
 import { loadFilters } from "./load_filters.mjs";
+import { logFetchError } from "./_error-logger.mjs";
 
 let _filters = [];
 
@@ -277,6 +278,9 @@ export default async () => {
           if (!keep) continue;
           await upsertJob(client, sourceKey, it);
         } catch (err) {
+          if (/HTTP\s+[45]\d{2}/i.test(err?.message)) {
+            await logFetchError("cron_jobs_11", { url: it.url, message: err.message });
+          }
           console.error(err);
         }
       }
@@ -291,6 +295,9 @@ export default async () => {
       console.log(`frissdiplomas page 1: ${count} items processed.`);
     } catch (err) {
       console.error("frissdiplomas fetch failed:", err.message);
+      if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
+        await logFetchError("cron_jobs_11", { url: "https://www.frissdiplomas.hu/allasok", message: err.message });
+      }
     }
 
     // Pages 2-4 only
@@ -306,6 +313,9 @@ export default async () => {
           break;
         }
         console.error(`frissdiplomas page ${page} fetch failed:`, err.message);
+        if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
+          await logFetchError("cron_jobs_11", { url: pageUrl, message: err.message });
+        }
         break;
       }
     }

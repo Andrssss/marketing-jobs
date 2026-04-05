@@ -1,5 +1,5 @@
 export const config = {
-  schedule: "27 4-23 * * *",
+  schedule: "27add  4-23 * * *",
 };
 
 /* =========================
@@ -15,6 +15,7 @@ import https from "https";
 import http from "http";
 import zlib from "zlib";
 import { load as cheerioLoad } from "cheerio";
+import { logFetchError } from "./_error-logger.mjs";
 
 const connectionString = process.env.NETLIFY_DATABASE_URL;
 if (!connectionString) throw new Error("NETLIFY_DATABASE_URL missing");
@@ -238,6 +239,9 @@ export default async () => {
           await sleep(250);
         } catch (err) {
           console.error(`[${pipe.label}] FAILED ID:`, row.id, "|", err.message);
+          if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
+            await logFetchError("cron_experience", { url: row.url, message: err.message });
+          }
           failed++;
         }
       }

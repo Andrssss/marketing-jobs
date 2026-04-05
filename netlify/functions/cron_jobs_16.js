@@ -15,6 +15,7 @@ import http from "http";
 import zlib from "zlib";
 import { XMLParser } from "fast-xml-parser";
 import { loadFilters } from "./load_filters.mjs";
+import { logFetchError } from "./_error-logger.mjs";
 
 let _filters = [];
 
@@ -210,6 +211,9 @@ export default async () => {
         console.log(`${p.key}: ${jobs.length} jobs found in RSS.`);
       } catch (err) {
         console.error(p.key, "fetch failed:", err.message);
+        if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
+          await logFetchError("cron_jobs_16", { url: p.url, message: err.message });
+        }
         continue;
       }
       // Csak valós állások, senior/medior kizárás

@@ -13,6 +13,7 @@ import http from "http";
 import zlib from "zlib";
 import { load as cheerioLoad } from "cheerio";
 import { loadFilters } from "./load_filters.mjs";
+import { logFetchError } from "./_error-logger.mjs";
 
 let _filters = [];
 
@@ -270,6 +271,9 @@ export default async () => {
         html = await fetchText(p.url);
       } catch (err) {
         console.error(p.key, "fetch failed:", err.message);
+        if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
+          await logFetchError("cron_jobs_3", { url: p.url, message: err.message });
+        }
         continue;
       }
 

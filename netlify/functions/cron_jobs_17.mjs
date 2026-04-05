@@ -14,6 +14,7 @@ import http from "http";
 import zlib from "zlib";
 import { load as cheerioLoad } from "cheerio";
 import { loadFilters } from "./load_filters.mjs";
+import { logFetchError } from "./_error-logger.mjs";
 
 let _filters = [];
 
@@ -199,7 +200,16 @@ async function fetchAllDreamJobs() {
 
     for (let page = 1; page <= MAX_PAGES; page += 1) {
       baseUrl.searchParams.set("page", String(page));
-      const payload = await fetchJson(baseUrl.toString());
+      let payload;
+      try {
+        payload = await fetchJson(baseUrl.toString());
+      } catch (err) {
+        console.error("dreamjobs fetch failed:", err.message);
+        if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
+          await logFetchError("cron_jobs_17", { url: baseUrl.toString(), message: err.message });
+        }
+        break;
+      }
       const pageJobs = extractDreamJobs(payload);
 
       if (pageJobs.length === 0) break;
@@ -269,7 +279,16 @@ async function fetchAllMelonJobs() {
 
   for (let page = 1; page <= MAX_PAGES; page += 1) {
     baseUrl.searchParams.set("page", String(page));
-    const payload = await fetchJson(baseUrl.toString());
+    let payload;
+    try {
+      payload = await fetchJson(baseUrl.toString());
+    } catch (err) {
+      console.error("melonjobs fetch failed:", err.message);
+      if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
+        await logFetchError("cron_jobs_17", { url: baseUrl.toString(), message: err.message });
+      }
+      break;
+    }
     const pageJobs = extractMelonJobs(payload);
 
     if (pageJobs.length === 0 && (!Array.isArray(payload) || payload.length === 0)) break;

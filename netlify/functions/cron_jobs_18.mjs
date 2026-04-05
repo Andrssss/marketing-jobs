@@ -14,6 +14,7 @@ import http from "http";
 import zlib from "zlib";
 import { load as cheerioLoad } from "cheerio";
 import { loadFilters } from "./load_filters.mjs";
+import { logFetchError } from "./_error-logger.mjs";
 
 let _filters = [];
 
@@ -264,6 +265,9 @@ async function fetchAllTalentJobs() {
       console.log(`talent: ${searchUrl.match(/k=([^&]+)/)?.[1]} → ${jobs.length} jobs`);
     } catch (err) {
       console.log(`talent: failed ${searchUrl}: ${err.message}`);
+      if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
+        await logFetchError("cron_jobs_18", { url: searchUrl, message: err.message });
+      }
     }
 
     await sleep(1000);
@@ -284,6 +288,9 @@ async function enrichTalentJobs(jobs) {
       }
     } catch (err) {
       console.log(`talent: failed detail for ${job.title}: ${err.message}`);
+      if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
+        await logFetchError("cron_jobs_18", { url: job.url, message: err.message });
+      }
     }
     if (i < jobs.length - 1) await sleep(500);
   }

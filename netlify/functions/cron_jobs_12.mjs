@@ -11,6 +11,7 @@ import https from "https";
 import http from "http";
 import zlib from "zlib";
 import { load as cheerioLoad } from "cheerio";
+import { logFetchError } from "./_error-logger.mjs";
 
 const connectionString = process.env.NETLIFY_DATABASE_URL;
 if (!connectionString) throw new Error("NETLIFY_DATABASE_URL is not set");
@@ -154,6 +155,9 @@ export default async () => {
         await sleep(200);
       } catch (err) {
         console.error("enrichment failed:", row.id, err.message);
+        if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
+          await logFetchError("cron_jobs_12", { url: row.url, message: err.message });
+        }
       }
     }
   } finally {
