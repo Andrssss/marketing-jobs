@@ -202,10 +202,6 @@ const MarketingJobs = () => {
       <header className="mkt-header">
         <div>
           <h1>📋 Marketing & irodai állások</h1>
-          <p className="mkt-subtitle">
-            Marketing, irodai asszisztens és adminisztratív pozíciók Budapesten.
-            Óránként frissül. Duplikáció mentes.
-          </p>
           <input
             className="mkt-search"
             value={q}
