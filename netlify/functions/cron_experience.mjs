@@ -116,6 +116,7 @@ function extractYearsFromText(text) {
     /\b\d+\s?(?:[-–]\s?\d+)?\s?(?:év|éves|eves|years?|yrs?)\b/gi,
     /\bminimum\s?\d+\s?(?:év|eves|years?|yrs?)\b/gi,
     /\bat least\s?\d+\s?(?:years?)\b/gi,
+    /\blegalabb\s+\d+\s?(?:ev|eves|year)\b/gi,
   ];
 
   const matches = [];
