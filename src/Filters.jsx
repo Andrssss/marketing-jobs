@@ -9,7 +9,10 @@ const Filters = () => {
   const [newWord, setNewWord] = useState("");
   const [error, setError] = useState(null);
   const [undoStack, setUndoStack] = useState([]);
+  const [recentlyAdded, setRecentlyAdded] = useState([]);
+  const [purging, setPurging] = useState({});
   const undoTimers = React.useRef({});
+  const addedTimers = React.useRef({});
 
   const load = async () => {
     try {
@@ -39,6 +42,12 @@ const Filters = () => {
       if (!res.ok) { setError(data.error); return; }
       setFilters(prev => [...prev, data].sort((a, b) => b.id - a.id));
       setNewWord("");
+      const uid = Date.now() + "-" + data.id;
+      setRecentlyAdded(prev => [...prev, { word: data.word, uid }]);
+      addedTimers.current[uid] = setTimeout(() => {
+        setRecentlyAdded(prev => prev.filter(r => r.uid !== uid));
+        delete addedTimers.current[uid];
+      }, 15000);
     } catch (e) {
       setError(e.message);
     }
@@ -90,6 +99,36 @@ const Filters = () => {
     setUndoStack(prev => prev.filter(u => u.uid !== item.uid));
   };
 
+  const purgeJobs = async (item) => {
+    setPurging(prev => ({ ...prev, [item.uid]: true }));
+    setError(null);
+    try {
+      const res = await fetch(API, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word: item.word }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error); return; }
+      setPurging(prev => ({ ...prev, [item.uid]: { done: true, count: data.deleted } }));
+      setTimeout(() => {
+        setRecentlyAdded(prev => prev.filter(r => r.uid !== item.uid));
+        clearTimeout(addedTimers.current[item.uid]);
+        delete addedTimers.current[item.uid];
+        setPurging(prev => { const n = { ...prev }; delete n[item.uid]; return n; });
+      }, 3000);
+    } catch (e) {
+      setError(e.message);
+      setPurging(prev => { const n = { ...prev }; delete n[item.uid]; return n; });
+    }
+  };
+
+  const dismissAdded = (item) => {
+    clearTimeout(addedTimers.current[item.uid]);
+    delete addedTimers.current[item.uid];
+    setRecentlyAdded(prev => prev.filter(r => r.uid !== item.uid));
+  };
+
   return (
     <div className="mkt-app">
       <div className="mkt-header">
@@ -132,6 +171,30 @@ const Filters = () => {
               <span style={{ color: "#666", fontSize: 14 }}>Nincs szó a listában.</span>
             )}
           </div>
+        </div>
+      )}
+
+      {recentlyAdded.length > 0 && (
+        <div className="undo-stack purge-stack">
+          {recentlyAdded.map(item => (
+            <div key={item.uid} className="undo-toast purge-toast">
+              <span className="undo-toast-text">
+                Hozzáadva: <strong>{item.word}</strong>
+              </span>
+              {purging[item.uid]?.done ? (
+                <span className="purge-done">✓ {purging[item.uid].count} törölve</span>
+              ) : (
+                <button
+                  className="undo-toast-btn purge-btn"
+                  onClick={() => purgeJobs(item)}
+                  disabled={purging[item.uid] === true}
+                >
+                  {purging[item.uid] === true ? "Törlés…" : "🗑 Hirdetések törlése"}
+                </button>
+              )}
+              <button className="undo-toast-close" onClick={() => dismissAdded(item)}>×</button>
+            </div>
+          ))}
         </div>
       )}
 

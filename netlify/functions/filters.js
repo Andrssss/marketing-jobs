@@ -30,7 +30,7 @@ exports.handler = async (event) => {
       statusCode: 204,
       headers: {
         "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-        "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
+        "Access-Control-Allow-Methods": "GET,POST,DELETE,PATCH,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
       },
       body: "",
@@ -84,6 +84,23 @@ exports.handler = async (event) => {
       }
       await client.query(`DELETE FROM marketing_filters WHERE id = $1`, [parsedId]);
       return json(200, { ok: true });
+    }
+
+    // PATCH – purge jobs matching a filter word
+    if (method === "PATCH") {
+      const { word } = JSON.parse(event.body || "{}");
+      if (!word || typeof word !== "string") {
+        return json(400, { error: "word kötelező." });
+      }
+      const trimmed = word.trim();
+      if (trimmed.length === 0 || trimmed.length > 100) {
+        return json(400, { error: "Érvénytelen szó." });
+      }
+      const result = await client.query(
+        `DELETE FROM marketing_job_posts WHERE LOWER(title) LIKE '%' || LOWER($1) || '%'`,
+        [trimmed]
+      );
+      return json(200, { deleted: result.rowCount });
     }
 
     return json(405, { error: "Nem támogatott metódus." });
