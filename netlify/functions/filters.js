@@ -88,7 +88,7 @@ exports.handler = async (event) => {
 
     // PATCH – purge jobs matching a filter word
     if (method === "PATCH") {
-      const { word } = JSON.parse(event.body || "{}");
+      const { word, confirm } = JSON.parse(event.body || "{}");
       if (!word || typeof word !== "string") {
         return json(400, { error: "word kötelező." });
       }
@@ -96,11 +96,20 @@ exports.handler = async (event) => {
       if (trimmed.length === 0 || trimmed.length > 100) {
         return json(400, { error: "Érvénytelen szó." });
       }
-      const result = await client.query(
-        `DELETE FROM marketing_job_posts WHERE LOWER(title) LIKE '%' || LOWER($1) || '%'`,
+
+      if (confirm) {
+        const result = await client.query(
+          `DELETE FROM marketing_job_posts WHERE LOWER(title) LIKE '%' || LOWER($1) || '%'`,
+          [trimmed]
+        );
+        return json(200, { deleted: result.rowCount });
+      }
+
+      const { rows } = await client.query(
+        `SELECT COUNT(*)::int AS count FROM marketing_job_posts WHERE LOWER(title) LIKE '%' || LOWER($1) || '%'`,
         [trimmed]
       );
-      return json(200, { deleted: result.rowCount });
+      return json(200, { count: rows[0].count });
     }
 
     return json(405, { error: "Nem támogatott metódus." });

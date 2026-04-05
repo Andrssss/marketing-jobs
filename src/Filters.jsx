@@ -109,6 +109,24 @@ const Filters = () => {
         body: JSON.stringify({ word: item.word }),
       });
       const data = await res.json();
+      if (!res.ok) { setError(data.error); setPurging(prev => { const n = { ...prev }; delete n[item.uid]; return n; }); return; }
+      setPurging(prev => ({ ...prev, [item.uid]: { preview: true, count: data.count } }));
+    } catch (e) {
+      setError(e.message);
+      setPurging(prev => { const n = { ...prev }; delete n[item.uid]; return n; });
+    }
+  };
+
+  const confirmPurge = async (item) => {
+    setPurging(prev => ({ ...prev, [item.uid]: { confirming: true } }));
+    setError(null);
+    try {
+      const res = await fetch(API, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ word: item.word, confirm: true }),
+      });
+      const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
       setPurging(prev => ({ ...prev, [item.uid]: { done: true, count: data.deleted } }));
       setTimeout(() => {
@@ -176,25 +194,37 @@ const Filters = () => {
 
       {recentlyAdded.length > 0 && (
         <div className="undo-stack purge-stack">
-          {recentlyAdded.map(item => (
-            <div key={item.uid} className="undo-toast purge-toast">
-              <span className="undo-toast-text">
-                Hozzáadva: <strong>{item.word}</strong>
-              </span>
-              {purging[item.uid]?.done ? (
-                <span className="purge-done">✓ {purging[item.uid].count} törölve</span>
-              ) : (
-                <button
-                  className="undo-toast-btn purge-btn"
-                  onClick={() => purgeJobs(item)}
-                  disabled={purging[item.uid] === true}
-                >
-                  {purging[item.uid] === true ? "Törlés…" : "🗑 Hirdetések törlése"}
-                </button>
-              )}
-              <button className="undo-toast-close" onClick={() => dismissAdded(item)}>×</button>
-            </div>
-          ))}
+          {recentlyAdded.map(item => {
+            const p = purging[item.uid];
+            return (
+              <div key={item.uid} className="undo-toast purge-toast">
+                <span className="undo-toast-text">
+                  Hozzáadva: <strong>{item.word}</strong>
+                </span>
+                {p?.done ? (
+                  <span className="purge-done">✓ {p.count} hirdetés törölve</span>
+                ) : p?.preview ? (
+                  <>
+                    <span className="purge-count">{p.count} találat</span>
+                    {p.count > 0 && (
+                      <button className="undo-toast-btn purge-btn" onClick={() => confirmPurge(item)}>
+                        Törlés megerősítése
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    className="undo-toast-btn purge-btn"
+                    onClick={() => purgeJobs(item)}
+                    disabled={p === true || p?.confirming}
+                  >
+                    {p === true || p?.confirming ? "Keresés…" : "🗑 Hirdetések törlése"}
+                  </button>
+                )}
+                <button className="undo-toast-close" onClick={() => dismissAdded(item)}>×</button>
+              </div>
+            );
+          })}
         </div>
       )}
 
