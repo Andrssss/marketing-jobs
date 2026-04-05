@@ -242,20 +242,23 @@ export default async () => {
 
   const SOURCES = [
     { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&f_TPR=r86400&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
-    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=1&f_TPR=r86400&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=3&f_TPR=r86400&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
     { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&f_TPR=r604800&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
-    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=1&f_TPR=r604800&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
-    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?keywords=Market%20Analysis&location=Budapest" },
-    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=1&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
-    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=3&f_TPR=r604800&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
     { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r86400&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
-    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=1&f_TPR=r86400&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=3&f_TPR=r86400&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
     { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r604800&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
-    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=1&f_TPR=r604800&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
-    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=1&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
-    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
-    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?f_E=2&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
-    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=5&f_E=2&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=3&f_TPR=r604800&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+
+    // geoId
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&f_TPR=r86400&geoId=104291169&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=3&f_TPR=r86400&geoId=104291169&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&f_TPR=r604800&geoId=104291169&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=3&f_TPR=r604800&geoId=104291169&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r86400&geoId=104291169&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=3&f_TPR=r86400&geoId=104291169&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r604800&geoId=104291169&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=3&f_TPR=r604800&geoId=104291169&keywords=Market%20Analysis&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
   ];
 
   const client = await pool.connect();
