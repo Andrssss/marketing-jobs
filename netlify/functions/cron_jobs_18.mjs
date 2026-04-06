@@ -1,5 +1,5 @@
 export const config = {
-  schedule: "6 4-23 * * *",
+  schedule: "18 4-23 * * *",
 };
 
 /* =========================
@@ -124,49 +124,15 @@ function fetchText(url, redirectLeft = 5) {
 async function upsertJob(client, sourceKey, item) {
   await client.query(
     `INSERT INTO marketing_job_posts
-      (source, title, url, experience, first_seen)
-     VALUES ($1,$2,$3,$4,NOW())
+      (source, title, url, first_seen)
+     VALUES ($1,$2,$3,NOW())
      ON CONFLICT (source, url) WHERE url IS NOT NULL
-     DO UPDATE SET
-       title = EXCLUDED.title,
-       experience = COALESCE(EXCLUDED.experience, marketing_job_posts.experience);`,
-    [sourceKey, item.title, item.url, item.experience]
+     DO NOTHING;`,
+    [sourceKey, item.title, item.url]
   );
 }
 
 /* ── talent.com ─────────────────────────────────────────────── */
-
-const SENIOR_KEYWORDS = [
-  "senior",
-  "szenior",
-  "lead",
-  "principal",
-  "staff",
-  "architect",
-  "expert",
-  "vezető fejlesztő",
-  "tech lead",
-  "CNC",
-  "gyakornok",
-  "intern",
-  "internship",
-  "trainee",
-  "diákmunka",
-  "diakmunka",
-  "igazgató",
-  "vezető",
-];
-
-
-function inferTalentExperience(title) {
-  const normalized = normalizeText(title);
-  if (SENIOR_KEYWORDS.some((kw) => normalized.includes(normalizeText(kw))))
-    return "senior";
-  if (/\bmedior\b|\bmid\b/.test(normalized)) return "medior";
-  if (/\bjunior\b|\bpalyakezdo\b|\bentry.?level\b/.test(normalized))
-    return "junior";
-  return null;
-}
 
 function extractTalentJobs(html) {
   const $ = cheerioLoad(html);
@@ -201,48 +167,10 @@ function extractTalentJobs(html) {
     jobs.push({
       title,
       url,
-      experience: inferTalentExperience(title) ?? "-",
     });
   });
 
   return jobs;
-}
-
-function extractTalentYearExperience(html) {
-  const text = cheerioLoad(html)("body").text();
-
-  const patterns = [
-    /\b\d+\s?\+?\s?(?:év|years?|éves|yrs?)\b/gi,
-    /\b\d+\s?[-–]\s?\d+\s?(?:év|years?|éves|yrs?)\b/gi,
-    /\bseveral\s+years?\b/gi,
-    /\bminimum\s?\d+\s?(?:év|years?)\b/gi,
-    /\bat\s+least\s+\d+\s?(?:years?|év)\b/gi,
-    /\blegalabb\s+\d+\s?(?:ev|eves|year)\b/gi,
-  ];
-
-  const matches = [];
-  for (const regex of patterns) {
-    const found = text.match(regex);
-    if (found) matches.push(...found);
-  }
-
-  if (matches.length === 0) return null;
-
-  const maxReasonable = 15;
-  const filtered = matches.filter((m) => {
-    const nums = m.match(/\d+/g)?.map((n) => parseInt(n, 10)) || [];
-    return nums.length === 0 || nums.every((n) => n <= maxReasonable);
-  });
-
-  if (filtered.length === 0) return null;
-
-  const dedupe = filtered.filter((m) => m.replace(/\s+/g, " ").trim().toLowerCase() !== "1 év");
-
-  if (dedupe.length === 0) return "-";
-
-  return [...new Set(
-    dedupe.map((m) => m.replace(/\s+/g, " ").trim().toLowerCase())
-  )].join(", ");
 }
 
 async function fetchAllTalentJobs() {
@@ -276,27 +204,6 @@ async function fetchAllTalentJobs() {
   return allJobs;
 }
 
-async function enrichTalentJobs(jobs) {
-  for (let i = 0; i < jobs.length; i++) {
-    const job = jobs[i];
-    try {
-      const html = await fetchText(job.url);
-      const yearExp = extractTalentYearExperience(html);
-      if (yearExp) {
-        console.log(`talent: ${job.title} → ${yearExp}`);
-        job.experience = yearExp;
-      }
-    } catch (err) {
-      console.log(`talent: failed detail for ${job.title}: ${err.message}`);
-      if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
-        await logFetchError("cron_jobs_18", { url: job.url, message: err.message });
-      }
-    }
-    if (i < jobs.length - 1) await sleep(500);
-  }
-  return jobs;
-}
-
 /* ── handler ────────────────────────────────────────────────── */
 
 export default async () => {
@@ -310,13 +217,12 @@ export default async () => {
       return !_filters.some(word => t.includes(normalizeText(word)));
     }
     const rawJobs = (await fetchAllTalentJobs()).filter((job) => titleNotBlacklisted(job.title));
-    const talentJobs = await enrichTalentJobs(rawJobs);
-    console.log(`talent: ${talentJobs.length} unique jobs found (after senior + 24h filter)`);
+    console.log(`talent: ${rawJobs.length} unique jobs found (after filter)`);
 
-    for (const job of talentJobs) {
+    for (const job of rawJobs) {
       await upsertJob(client, "talent", job);
     }
-    console.log(`talent: ${talentJobs.length} jobs processed`);
+    console.log(`talent: ${rawJobs.length} jobs processed`);
 
     return new Response("OK");
   } finally {

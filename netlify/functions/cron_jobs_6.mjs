@@ -1,7 +1,7 @@
 // netlify/functions/cron_jobs_6.mjs
 // console.log("CRON_JOBS_6 LOADED");
 export const config = {
-  schedule: "4 4-23 * * *",
+  schedule: "27 4-23 * * *",
 };
 
 /* =========================
@@ -288,48 +288,25 @@ function extractCandidates(html, baseUrl) {
 // =====================
 async function upsertJob(client, source, item) {
   const canonicalUrl = normalizeUrl(item.url);
-  const experience = item.experience ?? extractExperience(item.description);
 
   await client.query(
     `INSERT INTO marketing_job_posts
-      (source, title, url, experience, first_seen)
-     VALUES ($1,$2,$3,$4,NOW())
+      (source, title, url, first_seen)
+     VALUES ($1,$2,$3,NOW())
      ON CONFLICT (source, url) WHERE url IS NOT NULL
      DO NOTHING;
     `,
     [
       source,
       item.title,
-      canonicalUrl,
-      experience
+      canonicalUrl
     ]
   );
 }
 
 
 
-// ---------------------
-// Experience extractor
-// ---------------------
-function extractExperience(description) {
-  if (!description) return null;
 
-  const patterns = [
-    /(\d+\s?\+\s?(?:év|years?))/gi,
-    /(\d+\s?(?:[-–]\s?\d+)?\s?(?:év|éves|years?|yrs?))/gi,
-    /(minimum\s?\d+\s?(?:év|years?))/gi,
-    /(at least\s?\d+\s?(?:years?))/gi
-  ];
-
-  const matches = [];
-
-  for (const regex of patterns) {
-    const found = description.match(regex);
-    if (found) matches.push(...found);
-  }
-
-  return matches.length ? [...new Set(matches)].join(", ") : null;
-}
 
 
 

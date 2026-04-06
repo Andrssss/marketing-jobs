@@ -3,11 +3,13 @@ export const config = {
 };
 
 /* =========================
-   EXPERIENCE ENRICHMENT (merged cron_jobs 4 + 5 + 12)
+   EXPERIENCE ENRICHMENT (unified)
 
    - LinkedIn          → extracts from .description / .show-more-less-html__markup
    - profession-intern → extracts from #box_az-allashoz-tartozo-elvarasok
    - aam, karrierhungaria → extracts from full page body text
+   - cvcentrum         → extracts from full page body text
+   - talent            → extracts from full page body text
    ========================= */
 
 import { Pool } from "pg";
@@ -39,6 +41,15 @@ function normalizeText(s) {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+}
+
+const INTERNSHIP_KEYWORDS = [
+  "gyakornok", "intern", "internship", "trainee",
+  "pályakezdő", "palyakezdo", "diákmunka", "diakmunka",
+];
+function isInternshipTitle(title) {
+  const t = normalizeText(title);
+  return INTERNSHIP_KEYWORDS.some(k => t.includes(k));
 }
 
 function sleep(ms) {
@@ -200,6 +211,18 @@ const PIPELINES = [
     interval: "20 minutes",
     extract: extractBodyExperience,
   },
+  {
+    label: "cvcentrum",
+    sourceFilter: "source = 'cvcentrum-gyakornok-it'",
+    interval: "20 minutes",
+    extract: extractBodyExperience,
+  },
+  {
+    label: "talent",
+    sourceFilter: "source = 'talent'",
+    interval: "20 minutes",
+    extract: extractBodyExperience,
+  },
 ];
 
 /* ======================
@@ -230,6 +253,8 @@ export default async () => {
         try {
           const html = await fetchText(row.url);
           let experience = pipe.extract(html);
+
+          if (isInternshipTitle(row.title)) experience = "diákmunka";
 
           await client.query(
             `UPDATE marketing_job_posts SET experience = $1 WHERE id = $2`,
