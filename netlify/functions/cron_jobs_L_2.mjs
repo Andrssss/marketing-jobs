@@ -1,9 +1,8 @@
 export const config = {
-  schedule: "24 4-23 * * *",
+  schedule: "26 4-23 * * *",
 };
-
-/* ========================= keywords=teszt
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/vallalatiranyitasi-rendszer-sap/budapest?em[]=1" },
+/* =========================
+  { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=1&f_TPR=r604800&keywords=developer&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
 */
 
 
@@ -45,11 +44,6 @@ function normalizeWhitespace(s) {
   return String(s ?? "").replace(/\s+/g, " ").trim();
 }
 
-function titleNotBlacklisted(title) {
-  const t = normalizeText(title);
-  return !_filters.some(word => t.includes(normalizeText(word)));
-}
-
 function dedupeByUrl(items) {
   const seen = new Set();
   return items.filter((x) => {
@@ -61,13 +55,24 @@ function dedupeByUrl(items) {
   });
 }
 
-
 /* =====================
    URL helpers
 ===================== */
 function normalizeUrl(raw) {
   try {
     const u = new URL(raw);
+
+    /*
+    if (u.hostname.includes("linkedin.com") && u.pathname.startsWith("/jobs/view/")) {
+      u.search = "";
+      u.hash = "";
+      return u.toString();
+    }
+      */
+
+    if (u.hostname.includes("linkedin.com") && u.pathname.startsWith("/jobs/view/")) {
+      return `https://${u.hostname}${u.pathname}`; // teljesen eldobjuk a query stringet
+    }
 
     u.hash = "";
     [
@@ -79,6 +84,14 @@ function normalizeUrl(raw) {
   } catch {
     return raw;
   }
+}
+
+/* ---------------------
+   Rate-limit helper
+--------------------- */
+function randomDelay(minMs = 600, maxMs = 1400) {
+  const ms = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /* ---------------------
@@ -164,24 +177,66 @@ function extractCandidates(html, baseUrl) {
   return dedupeByUrl(items);
 }
 
-function getDedupeKey(rawUrl) {
-  return normalizeUrl(rawUrl);
+/* ---------------------
+   LinkedIn extraction
+--------------------- */
+function extractLinkedInJobs(html) {
+  const $ = cheerioLoad(html);
+  const jobs = [];
+
+  $("ul.jobs-search__results-list li").each((_, el) => {
+    const title = normalizeText($(el).find("h3.base-search-card__title").text());
+    const company = normalizeText($(el).find("h4.base-search-card__subtitle").text());
+    const location = normalizeText($(el).find("span.job-search-card__location").text());
+    const url = $(el).find("a.base-card__full-link").attr("href");
+    const timeEl = $(el).find("time");
+    const postedAt = timeEl.attr("datetime") || null;
+    if (title && url) jobs.push({ title, url, company, location, postedAt });
+  });
+
+  return dedupeByUrl(jobs);
 }
 
+function canonicalizeLinkedInJobUrl(raw) {
+  try {
+    const u = new URL(raw);
+    if (u.hostname.includes("linkedin.com") && u.pathname.startsWith("/jobs/view/")) {
+      const lastPart = u.pathname.split("/jobs/view/")[1];
+      const canonicalSlug = lastPart.replace(/-\d+$/, "");
+      return `https://www.linkedin.com/jobs/view/${canonicalSlug}`;
+    }
+    return raw;
+  } catch {
+    return raw;
+  }
+}
+
+function getDedupeKey(rawUrl) {
+  const u = normalizeUrl(rawUrl);
+  if (u.includes("linkedin.com/jobs/view/")) return canonicalizeLinkedInJobUrl(u);
+  return u;
+}
 
 /* ---------------------
    DB upsert
 --------------------- */
 async function upsertJob(client, source, item) {
+  const canonicalUrl =
+    source === "LinkedIn"
+      ? canonicalizeLinkedInJobUrl(item.url)
+      : item.url;
   const experience = "-";
 
   await client.query(
     `INSERT INTO marketing_job_posts
-      (source, title, url, experience, first_seen)
-     VALUES ($1,$2,$3,$4,NOW())
+      (source, title, url, canonical_url, experience, first_seen, posted_at)
+     SELECT $1,$2,$3,$4,$5,NOW(),$6
+     WHERE NOT EXISTS (
+       SELECT 1 FROM marketing_job_posts WHERE source = $1 AND canonical_url = $4
+     )
      ON CONFLICT (source, url) WHERE url IS NOT NULL
-        DO NOTHING;`,
-    [source, item.title, item.url, experience]
+        DO UPDATE SET posted_at = COALESCE(EXCLUDED.posted_at, marketing_job_posts.posted_at);`,
+    [source, item.title, item.url, canonicalUrl, experience, item.postedAt || null]
   );
 }
 
@@ -190,55 +245,52 @@ function levelNotBlacklisted(title, desc) {
   return !_filters.some(kw => combined.includes(normalizeText(kw)));
 }
 
-const KARRIERHUNGARIA_JOB_PREFIX = "https://karrierhungaria.hu/allasajanlat";
-const URL_BLACKLIST = new Set([
-  normalizeUrl("https://karrierhungaria.hu/allasajanlat-kategoriak"),
-  normalizeUrl("https://karrierhungaria.hu/allasajanlatok/projektmenedzsment2"),
-  normalizeUrl("https://karrierhungaria.hu/allasajanlatok/rendszerintegrator"),
-  normalizeUrl("https://karrierhungaria.hu/allasajanlatok/rendszeruzemelteto"),
-  normalizeUrl("https://karrierhungaria.hu/allasajanlatok/tesztelo-tesztmernok"),
-  normalizeUrl("https://karrierhungaria.hu/allasajanlatok/projektmenedzsment5"),
-  normalizeUrl("https://karrierhungaria.hu/allasajanlatok/halozati-es-rendszermernok"),
-  normalizeUrl("https://karrierhungaria.hu/allasajanlatok/adatbazisszakerto"),
-  normalizeUrl("https://karrierhungaria.hu/allasajanlatok/kontrolling"),
-  normalizeUrl("https://karrierhungaria.hu/allasajanlatok/programozo-fejleszto"),
-  normalizeUrl("https://karrierhungaria.hu/allasajanlatok/vallalatiranyitasi-rendszer-sap"),
-]);
-
 export default async () => {
+
   _filters = await loadFilters();
 
+  const SOURCES = [
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&f_TPR=r86400&keywords=Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=3&f_TPR=r86400&keywords=Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&f_TPR=r604800&keywords=Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=3&f_TPR=r604800&keywords=Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r86400&keywords=Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=3&f_TPR=r86400&keywords=Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r604800&keywords=Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=3&f_TPR=r604800&keywords=Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
 
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&f_TPR=r86400&keywords=Online%20Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=3&f_TPR=r86400&keywords=Online%20Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=2&f_TPR=r604800&keywords=Online%20Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=3&f_TPR=r604800&keywords=Online%20Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+    { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=10&f_E=2&f_TPR=r86400&keywords=Online%20Marketing&location=Budapest&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
+   
 
-const SOURCES = [
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/marketing-media-pr/budapest?em[]=1" },
-  { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/adminisztracio-asszisztens-irodai-munka/budapest?em[]=1" },
-
-
-];
+  ];
 
   const client = await pool.connect();
 
   try {
     for (const p of SOURCES) {
+      await randomDelay();
       let html;
       try {
         html = await fetchText(p.url);
       } catch (err) {
         console.error(p.key, "fetch failed:", err.message);
         if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
-          await logFetchError("cron_jobs_10", { url: p.url, message: err.message });
+          await logFetchError("cron_jobs_3", { url: p.url, message: err.message });
         }
         continue;
       }
 
-      const rawItems = extractCandidates(html, p.url);
+      const rawItems =
+        p.key === "LinkedIn"
+          ? extractLinkedInJobs(html)
+          : extractCandidates(html, p.url);
 
       let items = rawItems.filter(it => {
-        if (URL_BLACKLIST.has(normalizeUrl(it.url))) return false;
-        if (p.key === "karrierhungaria" && !/^https:\/\/karrierhungaria\.hu\/allasajanlat\/\d/.test(it.url)) return false;
         if (!levelNotBlacklisted(it.title, it.description)) return false;
-        if (!titleNotBlacklisted(it.title)) return false;
         return true;
       });
 
@@ -253,7 +305,6 @@ const SOURCES = [
 
       console.log(`${p.key}: ${items.length} items processed.`);
     }
-
   } finally {
     console.log(`Script started at ${new Date().toISOString()}`);
     client.release();

@@ -1,7 +1,7 @@
 // netlify/functions/cron_jobs_8.mjs
 // console.log("CRON_JOBS_8 LOADED");
 export const config = {
-  schedule: "25 4-23 * * *",
+  schedule: "27 4-23 * * *",
 };
 
 /* ========================= keywords=teszt

@@ -1,11 +1,13 @@
-// netlify/functions/cron_jobs_8.mjs
-// console.log("CRON_JOBS_8 LOADED");
+// netlify/functions/cron_jobs_6.mjs
+// console.log("CRON_JOBS_6 LOADED");
 export const config = {
-  schedule: "28 4-23 * * *",
+  schedule: "34 4-23 * * *",
 };
 
-/* ========================= keywords=teszt
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/tesztelo-tesztmernok/budapest/1,10,23,0,80" },
+/* =========================
+const SOURCES = [
+  { key: "cvcentrum-gyakornok-it", label: "CV Centrum – gyakornok IT", url: "https://cvcentrum.hu/?s=&category%5B%5D=it&category%5B%5D=it-programozas&category%5B%5D=it-uzemeltetes&type=&location%5B%5D=budapest&_noo_job_field_year_experience=&post_type=noo_job" },
+];
 */
 
 
@@ -32,27 +34,11 @@ const pool = new Pool({
 });
 
 
- 
-async function runAllBatches() {
-  const size = 4;
-  const totalBatches = Math.ceil(SOURCES.length / size);
-
-  console.log("[runAllBatches]", totalBatches, "batches");
-
-  for (let batch = 0; batch < totalBatches; batch++) {
-    await runBatch({ batch, size, write: true, debug: false, bundleDebug: false });
-    await sleep(50);
-  }
-}
-
 
 
 // =====================
 // HELPERS
 // =====================
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 function stripAccents(s) {
   return String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -92,6 +78,12 @@ function normalizeUrl(raw) {
   "keyword"
 ].forEach((p) => u.searchParams.delete(p));
 
+    // =========================
+    // CV Centrum: strip numeric suffix like -2-2 and -3 at the end
+    // =========================
+    if (u.hostname.includes("cvcentrum.hu") && /^\/allasok\/.*-\d+-\d+\/?$/.test(u.pathname)) {
+      u.pathname = u.pathname.replace(/-\d+(-\d+)?\/?$/, "");    
+    }
 
     return u.toString().replace(/\?$/, "");
   } catch {
@@ -107,7 +99,6 @@ function absolutize(href, base) {
     return null;
   }
 }
-
 
 function dedupeByUrl(items) {
   const seen = new Set();
@@ -125,23 +116,16 @@ function dedupeByUrl(items) {
 // Sources (csak az első 4 debugolásra)
 // =====================
 const SOURCES = [
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/marketing-media-pr/budapest/1,12,23,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,marketing,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,5,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20marketing,0,0,0,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,marketing%20asszisztens,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,marketing%20asszisztens,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
-  { key: "profession-intern", label: "Profession – Intern", url: "https://www.profession.hu/allasok/budapest/1,0,23,junior%20brand%20manager,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1" },
- 
+    { key: "cvcentrum-gyakornok-it", label: "CV Centrum – gyakornok IT", url: "https://cvcentrum.hu/?s=&category%5B%5D=adminisztracio&category%5B%5D=it&category%5B%5D=marketing&category%5B%5D=marketing-media&type=&location%5B%5D=budapest&_noo_job_field_year_experience=&post_type=noo_job" },
 ];
+
 
 
 function titleNotBlacklisted(title, desc) {
   const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
   return !_filters.some(kw => combined.includes(normalizeText(kw)));
 }
+
 
 
 function looksLikeJobUrl(sourceKey, url) {
@@ -160,19 +144,11 @@ function looksLikeJobUrl(sourceKey, url) {
   ];
   if (bad.some(p => u.pathname.startsWith(p))) return false;
 
-  // =========================
-  // PROFESSION – CSAK VALÓDI ÁLLÁS
-  // =========================
-  if (sourceKey.startsWith("profession")) {
-    /**
-     * Elfogadott minták:
-     * /allas/<slug>-<szam>
-     * /allas/<slug>-<szam>/pro
-     */
-    const ok = /^\/allas\/[^\/]+-\d+(\/pro)?\/?$/.test(u.pathname);
-    return ok;
+  // CVCentrum
+  if (sourceKey.startsWith("cvcentrum")) {
+    if (!/^\/allasok\/[^\/]+\/?$/.test(u.pathname)) return false;
   }
-
+  return true;
 }
 
 // =====================
@@ -364,7 +340,7 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
         html = await fetchText(p.url);
       } catch (err) {
         if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
-          await logFetchError("cron_jobs_5", { url: p.url, message: err.message });
+          await logFetchError("cron_jobs_6", { url: p.url, message: err.message });
         }
         stats.portals.push({ source, label: p.label, url: p.url, ok: false, error: err.message });
         continue;
@@ -373,11 +349,10 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
     
 
       // =========================
-      // MERGE JOBS
+      // EXTRACT & FILTER
       // =========================
-
-      let merged = extractCandidates(html, p.url).filter((c) => looksLikeJobUrl(source, c.url));
-
+      const merged = extractCandidates(html, p.url).filter((c) => looksLikeJobUrl(source, c.url));
+      
 
       // =========================
       // FILTER & KEYWORD MATCH
@@ -390,19 +365,6 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
       // =========================
       // BLACKLISTING
       // =========================
-      const BLACKLIST_SOURCES = ["profession"];
-      const BLACKLIST_URLS = [
-
-        "https://www.profession.hu/allasok/it-uzemeltetes-telekommunikacio/budapest/1,25,23,internship",
-        "https://www.profession.hu/allasok/programozo-fejleszto/budapest/1,10,23,0,75",
-        "https://www.profession.hu/allasok/it-tanacsado-elemzo-auditor/budapest/1,10,23,0,201",
-
-      ];
-
-      if (BLACKLIST_SOURCES.some(src => source.startsWith(src))) {
-        matchedList = matchedList.filter(c => !BLACKLIST_URLS.includes(c.url));
-      }
-
 
 
       // =========================
@@ -438,12 +400,12 @@ export default async (request) => {
   const write = url.searchParams.get("write") === "1";
 
   if (!debug) {
-    await runAllBatches();
+    await runBatch({ batch: 0, size: SOURCES.length, write: true, debug: false, bundleDebug: false });
     return new Response("Cron jobs done", { status: 200 });
   }
 
   const batch = Number(url.searchParams.get("batch") || 0);
-  const size = Number(url.searchParams.get("size") || 4);
+  const size = Number(url.searchParams.get("size") || SOURCES.length);
 
   const stats = await runBatch({
     batch,
