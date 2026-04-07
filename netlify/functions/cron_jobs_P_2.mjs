@@ -366,7 +366,7 @@ async function runBatch({ batch, size, write, debug = false, bundleDebug = false
         html = await fetchText(p.url);
       } catch (err) {
         if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
-          await logFetchError("cron_jobs_8", { url: p.url, message: err.message });
+          await logFetchError("cron_jobs_P_2", { url: p.url, message: err.message });
         }
         stats.portals.push({ source, label: p.label, url: p.url, ok: false, error: err.message });
         continue;

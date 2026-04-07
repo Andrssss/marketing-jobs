@@ -279,7 +279,7 @@ export default async () => {
           await upsertJob(client, sourceKey, it);
         } catch (err) {
           if (/HTTP\s+[45]\d{2}/i.test(err?.message)) {
-            await logFetchError("cron_jobs_15", { url: it.url, message: err.message });
+            await logFetchError("cron_jobs_F_2", { url: it.url, message: err.message });
           }
           console.error(err);
         }

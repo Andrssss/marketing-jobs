@@ -206,7 +206,7 @@ async function fetchAllDreamJobs() {
       } catch (err) {
         console.error("dreamjobs fetch failed:", err.message);
         if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
-          await logFetchError("cron_jobs_17", { url: baseUrl.toString(), message: err.message });
+          await logFetchError("cron_jobs_M_D_DREAMJOBS", { url: baseUrl.toString(), message: err.message });
         }
         break;
       }
@@ -285,7 +285,7 @@ async function fetchAllMelonJobs() {
     } catch (err) {
       console.error("melonjobs fetch failed:", err.message);
       if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
-        await logFetchError("cron_jobs_17", { url: baseUrl.toString(), message: err.message });
+        await logFetchError("cron_jobs_M_D_MELONJOBS", { url: baseUrl.toString(), message: err.message });
       }
       break;
     }

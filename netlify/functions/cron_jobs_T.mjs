@@ -194,7 +194,7 @@ async function fetchAllTalentJobs() {
     } catch (err) {
       console.log(`talent: failed ${searchUrl}: ${err.message}`);
       if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
-        await logFetchError("cron_jobs_18", { url: searchUrl, message: err.message });
+        await logFetchError("cron_jobs_T", { url: searchUrl, message: err.message });
       }
     }
 

@@ -277,7 +277,7 @@ export default async () => {
       } catch (err) {
         console.error(p.key, "fetch failed:", err.message);
         if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
-          await logFetchError("cron_jobs_4", { url: p.url, message: err.message });
+          await logFetchError("cron_jobs_L_4", { url: p.url, message: err.message });
         }
         continue;
       }
