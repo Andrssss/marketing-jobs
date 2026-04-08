@@ -15,6 +15,8 @@ import { load as cheerioLoad } from "cheerio";
 import { loadFilters } from "./load_filters.mjs";
 import { logFetchError } from "./_error-logger.mjs";
 
+const ENABLE_FETCH_ERROR_LOG = false;
+
 let _filters = [];
 
 /* ---------------------
@@ -276,9 +278,11 @@ export default async () => {
       try {
         html = await fetchText(p.url);
       } catch (err) {
-        console.error(p.key, "fetch failed:", err.message);
-        if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
-          await logFetchError("cron_jobs_L_1", { url: p.url, message: err.message });
+        if (ENABLE_FETCH_ERROR_LOG) {
+          console.error(p.key, "fetch failed:", err.message);
+          if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
+            await logFetchError("cron_jobs_L_1", { url: p.url, message: err.message });
+          }
         }
         continue;
       }
