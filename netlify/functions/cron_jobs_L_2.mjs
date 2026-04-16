@@ -1,5 +1,5 @@
 export const config = {
-  schedule: "26 4 * * *",
+  schedule: "26 4-23 * * *",
 };
 /* =========================
   { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=1&f_TPR=r604800&keywords=developer&location=Budapest%2C%20Budapest%2C%20Hungary&origin=JOB_SEARCH_PAGE_JOB_FILTER" },
@@ -219,6 +219,14 @@ function getDedupeKey(rawUrl) {
   return u;
 }
 
+function isHungarianLinkedInUrl(rawUrl) {
+  try {
+    return new URL(rawUrl).hostname.toLowerCase() === "hu.linkedin.com";
+  } catch {
+    return false;
+  }
+}
+
 /* ---------------------
    DB upsert
 --------------------- */
@@ -295,6 +303,7 @@ export default async () => {
 
       let items = rawItems.filter(it => {
         if (!levelNotBlacklisted(it.title, it.description)) return false;
+        if (!isHungarianLinkedInUrl(it.url) && (!it.location || (!it.location.includes("budapest") && !it.location.includes("hungary")))) return false;
         return true;
       });
 
