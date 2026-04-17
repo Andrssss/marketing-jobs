@@ -1,16 +1,17 @@
-import { Pool } from "pg";
-import https from "https";
-import http from "http";
-import zlib from "zlib";
+import https from "node:https";
+import http from "node:http";
+import zlib from "node:zlib";
 import { load as cheerioLoad } from "cheerio";
+import pkg from "pg";
+const { Pool } = pkg;
 import { loadFilters } from "./load_filters.mjs";
 import { logFetchError } from "./_error-logger.mjs";
 
 let _filters = [];
 
-/* ---------------------
-   DB connection
---------------------- */
+// =====================
+// DB
+// =====================
 const connectionString = process.env.NETLIFY_DATABASE_URL;
 if (!connectionString) throw new Error("NETLIFY_DATABASE_URL is not set");
 
@@ -19,33 +20,82 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-/* ---------------------
-   Helper functions
---------------------- */
+// =====================
+// HELPERS
+// =====================
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function stripAccents(s) {
+  return String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
 function normalizeText(s) {
-  return String(s ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
+  return stripAccents(s).replace(/\s+/g, " ").trim().toLowerCase();
 }
 
 function normalizeWhitespace(s) {
   return String(s ?? "").replace(/\s+/g, " ").trim();
 }
 
+function isProfessionNoResultsPage(html) {
+  const n = normalizeText(html);
+  return (
+    n.includes("nem talaltunk allast") ||
+    n.includes("nem talaltunk allast a megadott feltetelekkel") ||
+    n.includes("kerjuk modositsa kereseset")
+  );
+}
+
+function professionPageUrl(baseUrl, page) {
+  try {
+    const u = new URL(baseUrl);
+    const parts = u.pathname.split("/");
+    const last = parts[parts.length - 1] || "";
+    const m = last.match(/^(\d+),(.+)$/);
+    if (m) {
+      parts[parts.length - 1] = `${page},${m[2]}`;
+      u.pathname = parts.join("/");
+    }
+    return u.toString();
+  } catch {
+    return baseUrl;
+  }
+}
+
 function normalizeUrl(raw) {
   try {
     const u = new URL(raw);
+
+    // Remove hash
     u.hash = "";
+
+    // Remove common tracking params
     [
-      "utm_source", "utm_medium", "utm_campaign", "utm_term",
-      "utm_content", "fbclid", "gclid", "sessionId",
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "utm_term",
+      "utm_content",
+      "fbclid",
+      "gclid",
+      "sessionId",
+      "hash",
+      "keyword"
     ].forEach((p) => u.searchParams.delete(p));
+
     return u.toString().replace(/\?$/, "");
   } catch {
     return raw;
+  }
+}
+
+function absolutize(href, base) {
+  try {
+    return new URL(href, base).toString();
+  } catch {
+    return null;
   }
 }
 
@@ -63,24 +113,42 @@ function dedupeByUrl(items) {
 
 function titleNotBlacklisted(title, desc) {
   const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-  return !_filters.some((kw) => combined.includes(normalizeText(kw)));
+  return !_filters.some(kw => combined.includes(normalizeText(kw)));
 }
 
-function looksLikeJobUrl(url) {
+function looksLikeJobUrl(sourceKey, url) {
   if (!url) return false;
-  try {
-    const u = new URL(url);
-    if (!u.hostname.includes("profession.hu")) return false;
-    if (u.pathname.startsWith("/allas/")) return true;
-    return false;
-  } catch {
-    return false;
+  const u = new URL(url);
+
+  // általános szemét
+  const bad = [
+    "/fiokom",
+    "/csomagok",
+    "/hirdetesfeladas",
+    "/job-category",
+    "/terulet",
+    "/tag",
+    "/category",
+  ];
+  if (bad.some(p => u.pathname.startsWith(p))) return false;
+
+  // =========================
+  // PROFESSION – CSAK VALÓDI ÁLLÁS
+  // =========================
+  if (sourceKey.startsWith("profession")) {
+    /**
+     * Elfogadott minták:
+     * /allas/<slug>-<szam>
+     * /allas/<slug>-<szam>/pro
+     */
+    const ok = /^\/allas\/[^\/]+-\d+(\/pro)?\/?$/.test(u.pathname);
+    return ok;
   }
 }
 
-/* ---------------------
-   Fetch helper
---------------------- */
+// =====================
+// Fetch (gzip/deflate/br + redirect)
+// =====================
 function fetchText(url, redirectLeft = 5) {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
@@ -101,6 +169,7 @@ function fetchText(url, redirectLeft = 5) {
       (res) => {
         const code = res.statusCode || 0;
 
+        // redirect
         if ([301, 302, 303, 307, 308].includes(code)) {
           const loc = res.headers.location;
           if (!loc) return reject(new Error(`HTTP ${code} (no Location) for ${url}`));
@@ -110,8 +179,10 @@ function fetchText(url, redirectLeft = 5) {
           return resolve(fetchText(nextUrl, redirectLeft - 1));
         }
 
+        // decompress
         const enc = String(res.headers["content-encoding"] || "").toLowerCase();
         let stream = res;
+
         if (enc.includes("gzip")) stream = res.pipe(zlib.createGunzip());
         else if (enc.includes("deflate")) stream = res.pipe(zlib.createInflate());
         else if (enc.includes("br")) stream = res.pipe(zlib.createBrotliDecompress());
@@ -133,14 +204,26 @@ function fetchText(url, redirectLeft = 5) {
   });
 }
 
-/* ---------------------
-   HTML extraction
---------------------- */
+// =====================
+// Generic extraction (CTA title fix included)
+// =====================
 const CTA_TITLES = new Set([
-  "megnézem", "megnezem", "részletek", "reszletek",
-  "tovább", "tovabb", "bővebben", "bovebben",
-  "jelentkezem", "jelentkezés", "jelentkezes",
-  "apply", "details", "view", "open", "more",
+  "megnézem",
+  "megnezem",
+  "részletek",
+  "reszletek",
+  "tovább",
+  "tovabb",
+  "bővebben",
+  "bovebben",
+  "jelentkezem",
+  "jelentkezés",
+  "jelentkezes",
+  "apply",
+  "details",
+  "view",
+  "open",
+  "more",
 ]);
 
 function isCtaTitle(s) {
@@ -150,22 +233,20 @@ function isCtaTitle(s) {
 
 function extractCandidates(html, baseUrl) {
   const $ = cheerioLoad(html);
+
   const items = [];
 
   $("a[href]").each((_, el) => {
     const href = $(el).attr("href");
     if (!href) return;
 
-    let url;
-    try {
-      url = new URL(href, baseUrl).toString();
-    } catch {
-      return;
-    }
+    const url = absolutize(href, baseUrl);
+    if (!url) return;
+
     if (!/^https?:\/\//i.test(url)) return;
     if (/\.(jpg|jpeg|png|gif|svg|webp|pdf|zip|rar|7z)(\?|#|$)/i.test(url)) return;
 
-    let card = $(el).closest("article, li, .job-list-item, .job, .position, .listing, .card, .item");
+    let card = $(el).closest("app-job-list-item, article, li, .job-list-item, .job, .position, .listing, .card, .item");
     if (!card.length) card = $(el).closest("div");
 
     const linkText = normalizeWhitespace($(el).text());
@@ -196,9 +277,68 @@ function extractCandidates(html, baseUrl) {
   return dedupeByUrl(items);
 }
 
-/* ---------------------
-   DB upsert
---------------------- */
+// =====================
+// Pagination: fetch all profession.hu pages
+// =====================
+async function extractProfessionCandidatesAllPages(source, baseUrl) {
+  const all = [];
+  const seenUrls = new Set();
+  let pagesVisited = 0;
+  let pagesWithJobs = 0;
+
+  for (let page = 1; ; page++) {
+    const pageUrl = professionPageUrl(baseUrl, page);
+    let html;
+    try {
+      html = await fetchText(pageUrl);
+    } catch (err) {
+      console.log(`[profession] fetch error at page ${page}: ${err.message} — stopping pagination`);
+      break;
+    }
+    pagesVisited++;
+
+    if (isProfessionNoResultsPage(html)) {
+      console.log(`[profession] no results at page ${page}: ${pageUrl}`);
+      break;
+    }
+
+    const pageItems = extractCandidates(html, pageUrl).filter((c) =>
+      looksLikeJobUrl(source, c.url)
+    );
+
+    if (!pageItems.length) {
+      console.log(`[profession] no job cards at page ${page}: ${pageUrl}`);
+      break;
+    }
+
+    let newItems = 0;
+    for (const it of pageItems) {
+      const key = normalizeUrl(it.url);
+      if (seenUrls.has(key)) continue;
+      seenUrls.add(key);
+      all.push(it);
+      newItems++;
+    }
+
+    if (newItems === 0) {
+      console.log(`[profession] stop at page ${page}: no new job URLs: ${pageUrl}`);
+      break;
+    }
+
+    pagesWithJobs++;
+    await sleep(10);
+  }
+
+  return {
+    items: dedupeByUrl(all),
+    pagesVisited,
+    pagesWithJobs,
+  };
+}
+
+// =====================
+// DB upsert (csak write=1 esetén)
+// =====================
 async function upsertJob(client, source, item) {
   const canonicalUrl = normalizeUrl(item.url);
 
@@ -207,62 +347,100 @@ async function upsertJob(client, source, item) {
       (source, title, url, first_seen)
      VALUES ($1,$2,$3,NOW())
      ON CONFLICT (source, url) WHERE url IS NOT NULL
-     DO NOTHING;`,
-    [source, item.title, canonicalUrl]
+     DO NOTHING;
+    `,
+    [
+      source,
+      item.title,
+      canonicalUrl
+    ]
   );
 }
 
-/* ---------------------
-   Main exported function
---------------------- */
-export async function processProfessionSources(SOURCES, callerName, request) {
-  _filters = await loadFilters();
+// =====================
+// BLACKLISTING
+// =====================
+const BLACKLIST_SOURCES = ["profession"];
+const BLACKLIST_URLS = [
+  "https://www.profession.hu/allasok/it-uzemeltetes-telekommunikacio/budapest/1,25,23,internship",
+  "https://www.profession.hu/allasok/programozo-fejleszto/budapest/1,10,23,0,75",
+  "https://www.profession.hu/allasok/it-tanacsado-elemzo-auditor/budapest/1,10,23,0,201",
+];
 
-  const url = new URL(request.url);
-  const debug = url.searchParams.get("debug") === "1";
-  const write = url.searchParams.get("write") === "1";
+// =====================
+// runBatch
+// =====================
+async function runBatch(SOURCES, jobName, { batch, size, write, debug = false, bundleDebug = false }) {
+  const listToProcess = SOURCES.slice(batch * size, batch * size + size);
 
-  const client = (!debug || write) ? await pool.connect() : null;
+  const client = write ? await pool.connect() : null;
 
   const stats = {
     ok: true,
-    callerName,
+    node: process.version,
     ranAt: new Date().toISOString(),
     debug: !!debug,
-    write: !debug || write,
+    bundleDebug: !!bundleDebug,
+    write: !!write,
+    batch,
+    size,
+    processedThisRun: listToProcess.length,
     totalSources: SOURCES.length,
     portals: [],
   };
 
   try {
-    for (const p of SOURCES) {
+    for (const p of listToProcess) {
       const source = p.key;
 
-      let html = null;
+      // =========================
+      // FETCH (with pagination)
+      // =========================
+      let merged = [];
       try {
-        html = await fetchText(p.url);
+        if (source.startsWith("profession")) {
+          const professionResult = await extractProfessionCandidatesAllPages(source, p.url);
+          merged = professionResult.items;
+          console.log(
+            `[profession] crawled ${professionResult.pagesVisited} page(s), ` +
+              `${professionResult.pagesWithJobs} page(s) with jobs for source URL: ${p.url}`
+          );
+        } else {
+          const html = await fetchText(p.url);
+          merged = extractCandidates(html, p.url).filter((c) => looksLikeJobUrl(source, c.url));
+        }
       } catch (err) {
         if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
-          await logFetchError(callerName, { url: p.url, message: err.message });
+          await logFetchError(jobName, { url: p.url, message: err.message });
         }
         stats.portals.push({ source, label: p.label, url: p.url, ok: false, error: err.message });
         continue;
       }
 
-      const merged = extractCandidates(html, p.url)
-        .filter((c) => looksLikeJobUrl(c.url));
+      // =========================
+      // FILTER & KEYWORD MATCH
+      // =========================
+      let matchedList = merged
+        .filter((c) => titleNotBlacklisted(c.title, c.description));
 
-      const matchedList = merged.filter((c) => titleNotBlacklisted(c.title, c.description));
+      // =========================
+      // BLACKLISTING
+      // =========================
+      if (BLACKLIST_SOURCES.some(src => source.startsWith(src))) {
+        matchedList = matchedList.filter(c => !BLACKLIST_URLS.includes(c.url));
+      }
 
-      stats.portals.push({
-        source,
-        label: p.label,
-        url: p.url,
-        ok: true,
-        matched: matchedList.length,
-      });
+      // =========================
+      // DEBUG REJECTED
+      // =========================
+      let rejected = [];
 
-      if (client) {
+      stats.portals.push({ source, label: p.label, url: p.url, ok: true, matched: matchedList.length, rejected });
+
+      // =========================
+      // DB UPSERT
+      // =========================
+      if (write && client) {
         for (const item of matchedList) {
           await upsertJob(client, source, item);
         }
@@ -272,9 +450,43 @@ export async function processProfessionSources(SOURCES, callerName, request) {
     if (client) client.release();
   }
 
+  return stats;
+}
+
+// =====================
+// Main exported function
+// =====================
+export async function processProfessionSources(SOURCES, jobName, request) {
+  _filters = await loadFilters();
+  const url = new URL(request.url);
+
+  const debug = url.searchParams.get("debug") === "1";
+  const bundleDebug = url.searchParams.get("bundledebug") === "1";
+  const write = url.searchParams.get("write") === "1";
+
   if (!debug) {
-    return new Response("Cron done", { status: 200 });
+    const size = 4;
+    const totalBatches = Math.ceil(SOURCES.length / size);
+
+    console.log(`[${jobName}] runAllBatches:`, totalBatches, "batches");
+
+    for (let batch = 0; batch < totalBatches; batch++) {
+      await runBatch(SOURCES, jobName, { batch, size, write: true, debug: false, bundleDebug: false });
+      await sleep(50);
+    }
+    return new Response("Cron jobs done", { status: 200 });
   }
+
+  const batch = Number(url.searchParams.get("batch") || 0);
+  const size = Number(url.searchParams.get("size") || 4);
+
+  const stats = await runBatch(SOURCES, jobName, {
+    batch,
+    size,
+    write,
+    debug: true,
+    bundleDebug,
+  });
 
   return new Response(JSON.stringify(stats), {
     status: 200,
