@@ -1,5 +1,5 @@
 export const config = {
-  schedule: "43 5 * * *",
+  schedule: "43 9-22 * * *",
 };
 
 import { processProfessionSources } from "./_profession_core.mjs";

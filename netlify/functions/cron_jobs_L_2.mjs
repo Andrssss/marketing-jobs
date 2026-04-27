@@ -1,5 +1,5 @@
 export const config = {
-  schedule: "34 5 * * *",
+  schedule: "34 9-22 * * *",
 };
 /* =========================
   { key: "LinkedIn", label: "LinkedIn PAST 24H", url: "https://www.linkedin.com/jobs/search/?distance=0&f_E=1&f_TPR=r604800&keywords=developer&location=Budapest%2C%20Budapest%2C%20Hungary&origin=JOB_SEARCH_PAGE_JOB_FILTER" },

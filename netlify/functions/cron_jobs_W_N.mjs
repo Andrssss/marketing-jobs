@@ -1,7 +1,7 @@
 // netlify/functions/cron_jobs.mjs
 // console.log("CRON_JOBS LOADED");
 export const config = {
-  schedule: "48 5 * * *",
+  schedule: "48 9-22 * * *",
 };
 
 /* =========================
