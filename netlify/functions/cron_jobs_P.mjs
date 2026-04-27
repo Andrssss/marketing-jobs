@@ -40,11 +40,11 @@ const TASKS = [
 //
 
 export default withTimeout("cron_jobs_P", async () => {
-  const siteUrl = process.env.URL;
-  const secret = process.env.CRON_SECRET; 
+  const siteUrl = process.env.URL || process.env.DEPLOY_PRIME_URL || process.env.DEPLOY_URL;
+  const secret = process.env.CRON_SECRET;
 
   if (!siteUrl || !secret) {
-    console.warn("[cron_jobs_P] URL or CRON_SECRET not set, cannot trigger background functions");
+    console.warn(`[cron_jobs_P] missing env: URL=${!!siteUrl} CRON_SECRET=${!!secret}`);
     return new Response("Missing env vars", { status: 500 });
   }
 
