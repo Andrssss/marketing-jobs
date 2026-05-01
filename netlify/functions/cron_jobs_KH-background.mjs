@@ -1,7 +1,3 @@
-export const config = {
-  schedule: "26 9-22 * * *",
-};
-
 /* ========================= keywords=teszt
   { key: "karrierhungaria", label: "karrierhungaria", url: "https://karrierhungaria.hu/allasajanlatok/vallalatiranyitasi-rendszer-sap/budapest?em[]=1" },
 */

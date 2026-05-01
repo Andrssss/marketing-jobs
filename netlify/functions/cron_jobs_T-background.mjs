@@ -1,7 +1,3 @@
-export const config = {
-  schedule: "28 9-22 * * *",
-};
-
 /* =========================
   "https://hu.talent.com,
 */

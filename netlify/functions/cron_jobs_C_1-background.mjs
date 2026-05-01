@@ -1,15 +1,10 @@
-// netlify/functions/cron_jobs_6.mjs
-// console.log("CRON_JOBS_6 LOADED");
-export const config = {
-  schedule: "30 9-22 * * *",
-};
+// netlify/functions/cron_jobs_C_1.mjs
+console.log("CRON_JOBS_C_1 LOADED");
 
 /* =========================
-const SOURCES = [
-  { key: "cvcentrum-gyakornok-it", label: "CV Centrum – gyakornok IT", url: "https://cvcentrum.hu/?s=&category%5B%5D=it&category%5B%5D=it-programozas&category%5B%5D=it-uzemeltetes&type=&location%5B%5D=budapest&_noo_job_field_year_experience=&post_type=noo_job" },
-];
-*/
-
+   CV Centrum — unified scraper for one or more query variants.
+   Paginates each base URL via `paged=N` until 404 / empty page / no new jobs.
+   ========================= */
 
 import https from "node:https";
 import http from "node:http";
@@ -18,9 +13,10 @@ import { load as cheerioLoad } from "cheerio";
 import pkg from "pg";
 const { Pool } = pkg;
 import { loadFilters } from "./load_filters.mjs";
-import { logFetchError } from "./_error-logger.mjs";
+import { logFetchError, withTimeout } from "./_error-logger.mjs";
 
 let _filters = [];
+const ENABLE_FETCH_ERROR_LOGGING = false;
 
 // =====================
 // DB
@@ -33,13 +29,9 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-
-
-
 // =====================
 // HELPERS
 // =====================
-
 function stripAccents(s) {
   return String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
@@ -52,37 +44,18 @@ function normalizeWhitespace(s) {
   return String(s ?? "").replace(/\s+/g, " ").trim();
 }
 
-
-
-
-
-
 function normalizeUrl(raw) {
   try {
     const u = new URL(raw);
-
-    // Remove hash
     u.hash = "";
-
-    // Remove common tracking params
     [
-  "utm_source",
-  "utm_medium",
-  "utm_campaign",
-  "utm_term",
-  "utm_content",
-  "fbclid",
-  "gclid",
-  "sessionId",
-  "hash",
-  "keyword"
-].forEach((p) => u.searchParams.delete(p));
+      "utm_source", "utm_medium", "utm_campaign", "utm_term",
+      "utm_content", "fbclid", "gclid", "sessionId", "hash", "keyword",
+    ].forEach((p) => u.searchParams.delete(p));
 
-    // =========================
     // CV Centrum: strip numeric suffix like -2-2 and -3 at the end
-    // =========================
     if (u.hostname.includes("cvcentrum.hu") && /^\/allasok\/.*-\d+-\d+\/?$/.test(u.pathname)) {
-      u.pathname = u.pathname.replace(/-\d+(-\d+)?\/?$/, "");    
+      u.pathname = u.pathname.replace(/-\d+(-\d+)?\/?$/, "");
     }
 
     return u.toString().replace(/\?$/, "");
@@ -90,7 +63,6 @@ function normalizeUrl(raw) {
     return raw;
   }
 }
-
 
 function absolutize(href, base) {
   try {
@@ -112,47 +84,53 @@ function dedupeByUrl(items) {
   });
 }
 
-// =====================
-// Sources (csak az első 4 debugolásra)
-// =====================
-const SOURCES = [
-    { key: "cvcentrum-gyakornok-it", label: "CV Centrum – gyakornok IT", url: "https://cvcentrum.hu/?s=&category%5B%5D=adminisztracio&category%5B%5D=it&category%5B%5D=marketing&category%5B%5D=marketing-media&type=&location%5B%5D=budapest&_noo_job_field_year_experience=&post_type=noo_job" },
-];
-
-
-
-function titleNotBlacklisted(title, desc) {
-  const combined = normalizeText(`${title ?? ""} ${desc ?? ""}`);
-  return !_filters.some(kw => combined.includes(normalizeText(kw)));
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
+// =====================
+// Sources (base URLs — pagination handled below)
+// =====================
+const BASE_URLS = [
+  "https://cvcentrum.hu/?s=&category%5B%5D=adminisztracio&category%5B%5D=it&category%5B%5D=marketing&category%5B%5D=marketing-media&type=&location%5B%5D=budapest&_noo_job_field_year_experience=&post_type=noo_job",
+];
 
+const SOURCE_KEY = "cvcentrum-gyakornok-it";
+const MAX_PAGES = 30;
 
-function looksLikeJobUrl(sourceKey, url) {
+function buildPagedUrl(baseUrl, page) {
+  const u = new URL(baseUrl);
+  u.searchParams.set("paged", String(page));
+  return u.toString();
+}
+
+function _blacklistRegex(k) {
+  const escaped = normalizeText(k).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i");
+}
+
+function isSeniorLike(title = "") {
+  const n = normalizeText(title);
+  return _filters.some((k) => _blacklistRegex(k).test(n));
+}
+
+function looksLikeJobUrl(url) {
   if (!url) return false;
-  const u = new URL(url);
+  let u;
+  try { u = new URL(url); } catch { return false; }
 
-  // általános szemét
   const bad = [
-    "/fiokom",
-    "/csomagok",
-    "/hirdetesfeladas",
-    "/job-category",
-    "/terulet",
-    "/tag",
-    "/category",
+    "/fiokom", "/csomagok", "/hirdetesfeladas",
+    "/job-category", "/terulet", "/tag", "/category",
   ];
-  if (bad.some(p => u.pathname.startsWith(p))) return false;
+  if (bad.some((p) => u.pathname.startsWith(p))) return false;
 
-  // CVCentrum
-  if (sourceKey.startsWith("cvcentrum")) {
-    if (!/^\/allasok\/[^\/]+\/?$/.test(u.pathname)) return false;
-  }
+  if (!/^\/allasok\/[^\/]+\/?$/.test(u.pathname)) return false;
   return true;
 }
 
 // =====================
-// Fetch (gzip/deflate/br + redirect)
+// Fetch (gzip/deflate/br + redirect). Returns null on 404.
 // =====================
 function fetchText(url, redirectLeft = 5) {
   return new Promise((resolve, reject) => {
@@ -169,12 +147,11 @@ function fetchText(url, redirectLeft = 5) {
           "Accept-Language": "hu-HU,hu;q=0.9,en;q=0.8",
           "Accept-Encoding": "gzip,deflate,br",
         },
-        timeout: 50000,
+        timeout: 25000,
       },
       (res) => {
         const code = res.statusCode || 0;
 
-        // redirect
         if ([301, 302, 303, 307, 308].includes(code)) {
           const loc = res.headers.location;
           if (!loc) return reject(new Error(`HTTP ${code} (no Location) for ${url}`));
@@ -184,10 +161,14 @@ function fetchText(url, redirectLeft = 5) {
           return resolve(fetchText(nextUrl, redirectLeft - 1));
         }
 
-        // decompress
+        // 404 -> signal end of pagination, not an error
+        if (code === 404) {
+          res.resume();
+          return resolve(null);
+        }
+
         const enc = String(res.headers["content-encoding"] || "").toLowerCase();
         let stream = res;
-
         if (enc.includes("gzip")) stream = res.pipe(zlib.createGunzip());
         else if (enc.includes("deflate")) stream = res.pipe(zlib.createInflate());
         else if (enc.includes("br")) stream = res.pipe(zlib.createBrotliDecompress());
@@ -210,26 +191,15 @@ function fetchText(url, redirectLeft = 5) {
 }
 
 // =====================
-// Generic extraction (CTA title fix included)
+// Extraction
 // =====================
 const CTA_TITLES = new Set([
-  "megnézem",
-  "megnezem",
-  "részletek",
-  "reszletek",
-  "tovább",
-  "tovabb",
-  "bővebben",
-  "bovebben",
-  "jelentkezem",
-  "jelentkezés",
-  "jelentkezes",
-  "apply",
-  "details",
-  "view",
-  "open",
-  "more",
+  "megnézem", "megnezem", "részletek", "reszletek",
+  "tovább", "tovabb", "bővebben", "bovebben",
+  "jelentkezem", "jelentkezés", "jelentkezes",
+  "apply", "details", "view", "open", "more",
 ]);
+
 function isCtaTitle(s) {
   const n = normalizeText(s);
   return !n || n.length < 4 || CTA_TITLES.has(n);
@@ -237,7 +207,6 @@ function isCtaTitle(s) {
 
 function extractCandidates(html, baseUrl) {
   const $ = cheerioLoad(html);
-
   const items = [];
 
   $("a[href]").each((_, el) => {
@@ -246,7 +215,6 @@ function extractCandidates(html, baseUrl) {
 
     const url = absolutize(href, baseUrl);
     if (!url) return;
-
     if (!/^https?:\/\//i.test(url)) return;
     if (/\.(jpg|jpeg|png|gif|svg|webp|pdf|zip|rar|7z)(\?|#|$)/i.test(url)) return;
 
@@ -281,10 +249,8 @@ function extractCandidates(html, baseUrl) {
   return dedupeByUrl(items);
 }
 
-
-
 // =====================
-// DB upsert (csak write=1 esetén)
+// DB upsert
 // =====================
 async function upsertJob(client, source, item) {
   const canonicalUrl = normalizeUrl(item.url);
@@ -294,129 +260,105 @@ async function upsertJob(client, source, item) {
       (source, title, url, first_seen)
      VALUES ($1,$2,$3,NOW())
      ON CONFLICT (source, url) WHERE url IS NOT NULL
-     DO NOTHING;
-    `,
-    [
-      source,
-      item.title,
-      canonicalUrl
-    ]
+     DO NOTHING;`,
+    [source, item.title, canonicalUrl]
   );
 }
 
+// =====================
+// Crawl one base URL across pages until 404 / empty / no-new
+// =====================
+async function crawlBase(baseUrl, globalSeen) {
+  const collected = [];
+  let pagesVisited = 0;
+  let stopReason = "max-pages";
 
+  for (let page = 1; page <= MAX_PAGES; page += 1) {
+    const pageUrl = buildPagedUrl(baseUrl, page);
+    let html;
+    try {
+      html = await fetchText(pageUrl);
+    } catch (err) {
+      if (ENABLE_FETCH_ERROR_LOGGING) {
+        await logFetchError("cron_jobs_C_1", { url: pageUrl, message: err.message });
+      }
+      console.warn(`[cvcentrum] page ${page} fetch failed: ${err.message}`);
+      stopReason = "fetch-error";
+      break;
+    }
 
+    pagesVisited = page;
 
+    if (html === null) {
+      stopReason = "404";
+      break;
+    }
 
+    const candidates = extractCandidates(html, pageUrl).filter((c) => looksLikeJobUrl(c.url));
 
+    if (candidates.length === 0) {
+      stopReason = "empty";
+      break;
+    }
 
+    let newOnPage = 0;
+    for (const c of candidates) {
+      const key = normalizeUrl(c.url);
+      if (globalSeen.has(key)) continue;
+      globalSeen.add(key);
+      collected.push(c);
+      newOnPage += 1;
+    }
 
-// ✅ Fixed runBatch()
-async function runBatch({ batch, size, write, debug = false, bundleDebug = false }) {
-  const listToProcess = SOURCES.slice(batch * size, batch * size + size);
+    console.log(`[cvcentrum] page ${page}: ${candidates.length} candidates, ${newOnPage} new`);
 
-  const client = write ? await pool.connect() : null;
+    if (newOnPage === 0) {
+      stopReason = "no-new";
+      break;
+    }
 
-  const stats = {
-    ok: true,
-    node: process.version,
-    ranAt: new Date().toISOString(),
-    debug: !!debug,
-    bundleDebug: !!bundleDebug,
-    write: !!write,
-    batch,
-    size,
-    processedThisRun: listToProcess.length,
-    totalSources: SOURCES.length,
-    portals: [],
-  };
+    await sleep(200);
+  }
+
+  return { collected, pagesVisited, stopReason };
+}
+
+// =====================
+// Handler
+// =====================
+const _runJob = withTimeout("cron_jobs_C_1-background", async () => {
+  _filters = await loadFilters();
+
+  const client = await pool.connect();
+  const globalSeen = new Set();
 
   try {
-    for (const p of listToProcess) {
-      const source = p.key;
+    let totalInserted = 0;
 
-      let html = null;
-      try {
-        html = await fetchText(p.url);
-      } catch (err) {
-        if (/HTTP\s+[45]\d{2}/i.test(err.message)) {
-          await logFetchError("cron_jobs_C1", { url: p.url, message: err.message });
-        }
-        stats.portals.push({ source, label: p.label, url: p.url, ok: false, error: err.message });
-        continue;
-      }
+    for (const baseUrl of BASE_URLS) {
+      const { collected, pagesVisited, stopReason } = await crawlBase(baseUrl, globalSeen);
+      console.log(
+        `[cvcentrum] base done - pages=${pagesVisited}, collected=${collected.length}, stop=${stopReason}`
+      );
 
-    
+      const matched = collected.filter((c) => !isSeniorLike(c.title));
 
-      // =========================
-      // EXTRACT & FILTER
-      // =========================
-      const merged = extractCandidates(html, p.url).filter((c) => looksLikeJobUrl(source, c.url));
-      
-
-      // =========================
-      // FILTER & KEYWORD MATCH
-      // =========================
-      let matchedList = merged
-        .filter((c) => titleNotBlacklisted(c.title, c.description));
-
-
-
-      // =========================
-      // BLACKLISTING
-      // =========================
-
-
-      // =========================
-      // DEBUG REJECTED
-      // =========================
-      let rejected = [];
-
-      stats.portals.push({ source, label: p.label, url: p.url, ok: true, matched: matchedList.length, rejected });
-
-      // =========================
-      // DB UPSERT
-      // =========================
-      if (write && client) {
-        for (const item of matchedList) {
-          await upsertJob(client, source, item);
+      for (const item of matched) {
+        try {
+          await upsertJob(client, SOURCE_KEY, item);
+          totalInserted += 1;
+        } catch (err) {
+          console.error(`[cvcentrum] upsert failed for ${item.url}: ${err.message}`);
         }
       }
     }
+
+    console.log(`[cvcentrum] total upserts attempted: ${totalInserted}`);
   } finally {
-    if (client) client.release();
+    client.release();
   }
 
-  return stats;
-}
+  return new Response("OK");
+}, 14 * 60 * 1000);
 
-
-export default async (request) => {
-  _filters = await loadFilters();
-  const url = new URL(request.url);
-
-  const debug = url.searchParams.get("debug") === "1";
-  const bundleDebug = url.searchParams.get("bundledebug") === "1";
-  const write = url.searchParams.get("write") === "1";
-
-  if (!debug) {
-    await runBatch({ batch: 0, size: SOURCES.length, write: true, debug: false, bundleDebug: false });
-    return new Response("Cron jobs done", { status: 200 });
-  }
-
-  const batch = Number(url.searchParams.get("batch") || 0);
-  const size = Number(url.searchParams.get("size") || SOURCES.length);
-
-  const stats = await runBatch({
-    batch,
-    size,
-    write,
-    debug: true,
-    bundleDebug,
-  });
-
-  return new Response(JSON.stringify(stats), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  });
-};
+export default async (request) => _runJob(request);

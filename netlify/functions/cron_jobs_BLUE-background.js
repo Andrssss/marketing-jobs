@@ -1,8 +1,3 @@
-export const config = {
-  schedule: "22 9-22 * * *",
-};
-
-
 /* =========================
 const SOURCES = [
     { key: "bluebird", label: "bluebird", url: "https://bluebird.hu/?feed=job_feed&search_location=Budapest&job_categories=sales-marketing" },

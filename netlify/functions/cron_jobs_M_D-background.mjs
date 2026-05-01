@@ -1,7 +1,3 @@
-export const config = {
-  schedule: "21 9-22 * * *",
-};
-
 /* =========================
   DreamJobs: category=52 (Marketing, PR), location=2925 (Budapest)
   MelonJobs: job-categories=91 (Adminisztrátor, Dokumentumkezelő), 196 (Marketing, Média, PR vezető)
