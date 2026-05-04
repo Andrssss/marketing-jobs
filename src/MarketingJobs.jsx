@@ -21,6 +21,48 @@ const hoursSince = (iso) => {
   return ms / (1000 * 60 * 60);
 };
 
+const CLICKED_KEYS_STORAGE = "marketingClickedKeys";
+const APPLIED_KEYS_STORAGE = "marketingAppliedKeys";
+
+const loadClickedKeys = () => {
+  try {
+    const raw = localStorage.getItem(CLICKED_KEYS_STORAGE);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+};
+
+const saveClickedKey = (key) => {
+  try {
+    const raw = localStorage.getItem(CLICKED_KEYS_STORAGE);
+    const arr = raw ? JSON.parse(raw) : [];
+    if (!arr.includes(key)) {
+      arr.push(key);
+      localStorage.setItem(CLICKED_KEYS_STORAGE, JSON.stringify(arr));
+    }
+  } catch {
+    // silent
+  }
+};
+
+const loadAppliedKeys = () => {
+  try {
+    const raw = localStorage.getItem(APPLIED_KEYS_STORAGE);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+};
+
+const saveAppliedKeys = (set) => {
+  try {
+    localStorage.setItem(APPLIED_KEYS_STORAGE, JSON.stringify([...set]));
+  } catch {
+    // silent
+  }
+};;
+
 
 
 const MarketingJobs = () => {
@@ -58,6 +100,38 @@ const MarketingJobs = () => {
     const saved = localStorage.getItem("marketingSourcesOpen");
     return saved !== null ? saved === "true" : true;
   });
+
+  const [clickedKeys, setClickedKeys] = useState(() => loadClickedKeys());
+  const [appliedKeys, setAppliedKeys] = useState(() => loadAppliedKeys());
+
+  const trackClick = (target) => {
+    setClickedKeys((prev) => {
+      const next = new Set(prev);
+      next.add(target);
+      return next;
+    });
+    saveClickedKey(target);
+  };
+
+  const toggleApplied = (key) => {
+    setAppliedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      saveAppliedKeys(next);
+      return next;
+    });
+  };
+
+  const longPressTimerRef = React.useRef(null);
+  const startLongPress = (target) => {
+    clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = setTimeout(() => trackClick(target), 500);
+  };
+  const cancelLongPress = () => clearTimeout(longPressTimerRef.current);
 
   /* Fetch */
   const fetchSources = async () => {
@@ -342,15 +416,25 @@ const MarketingJobs = () => {
           {visibleJobs.map((job) => {
             const isNew = job.firstSeen && hoursSince(job.firstSeen) <= 1;
             const key = `${job.source}-${job.url || job.title}-${job.firstSeen}`;
+            const clickKey = `job:${job.source}:${job.title}`;
+            const isVisited = clickedKeys.has(clickKey);
+            const isApplied = appliedKeys.has(clickKey);
 
             return (
-              <li key={key} className="mkt-card">
+              <li key={key} className={`mkt-card${isVisited ? " mkt-card--visited" : ""}${isApplied ? " mkt-card--applied" : ""}`}>
                 <div className="mkt-card-row">
                   <a
                     className="mkt-card-title"
                     href={job.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackClick(clickKey)}
+                    onAuxClick={(e) => { if (e.button === 1) trackClick(clickKey); }}
+                    onContextMenu={() => trackClick(clickKey)}
+                    onTouchStart={() => startLongPress(clickKey)}
+                    onTouchEnd={cancelLongPress}
+                    onTouchMove={cancelLongPress}
+                    onTouchCancel={cancelLongPress}
                   >
                     {job.title}
                   </a>
@@ -367,6 +451,12 @@ const MarketingJobs = () => {
                       ? new Date(job.firstSeen).toLocaleString("hu-HU")
                       : "—"}
                   </span>
+                  <button
+                    className={`mkt-applied-btn${isApplied ? " applied" : ""}`}
+                    onClick={() => toggleApplied(clickKey)}
+                  >
+                    {isApplied ? "✓ Jelentkeztem" : "Jelentkeztem?"}
+                  </button>
                 </div>
               </li>
             );

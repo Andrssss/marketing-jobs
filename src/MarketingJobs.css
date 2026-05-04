@@ -322,6 +322,8 @@ html, body {
 
 /* ===== CARD ===== */
 .mkt-card {
+  position: relative;
+  overflow: hidden;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
@@ -332,6 +334,84 @@ html, body {
 .mkt-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.mkt-card--visited::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 56px 56px 0;
+  border-color: transparent #9b8ec4 transparent transparent;
+  z-index: 1;
+}
+
+.mkt-card--visited::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 25px 25px 0;
+  border-color: transparent #191b21 transparent transparent;
+  z-index: 2;
+}
+
+.mkt-card--applied::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 56px 56px 0;
+  border-color: transparent #22c55e transparent transparent;
+  z-index: 1;
+}
+
+.mkt-card--applied::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 25px 25px 0;
+  border-color: transparent #191b21 transparent transparent;
+  z-index: 2;
+}
+
+/* ===== APPLIED BUTTON ===== */
+.mkt-applied-btn {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.mkt-applied-btn:hover {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.mkt-applied-btn.applied {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
 }
 
 /* ===== CARD ROW ===== */
