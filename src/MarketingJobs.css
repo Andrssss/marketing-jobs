@@ -201,6 +201,25 @@ html, body {
   box-shadow: 0 6px 16px rgba(155, 142, 196, 0.35);
 }
 
+.mkt-btn--toggle {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ccc;
+}
+
+.mkt-btn--toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  transform: none;
+}
+
+.mkt-btn--toggle.active {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.4);
+}
+
 /* ===== SOURCES TOGGLE ===== */
 .mkt-sources-header {
   margin: 8px 0 6px;
