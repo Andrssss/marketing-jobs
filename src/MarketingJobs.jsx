@@ -163,7 +163,7 @@ const MarketingJobs = () => {
   const [syncOpen, setSyncOpen] = useState(false);
   const [syncIdShown, setSyncIdShown] = useState(false);
   const [syncStatus, setSyncStatus] = useState("");
-  const [importId, setImportId] = useState("");
+  const [importId, setImportId] = useState(() => localStorage.getItem("marketingSyncImportId") || "");
   const myVisitorId = useMemo(() => getOrCreateVisitorId(), []);
 
   const handleSyncUpload = async () => {
@@ -498,7 +498,7 @@ const MarketingJobs = () => {
                 className="mkt-search"
                 placeholder="Másik eszköz szinkron ID-ja"
                 value={importId}
-                onChange={(e) => setImportId(e.target.value)}
+                onChange={(e) => { setImportId(e.target.value); localStorage.setItem("marketingSyncImportId", e.target.value); }}
               />
               <button className="mkt-btn" onClick={handleSyncDownload}>⬇ Letöltés és összefésülés</button>
             </div>
