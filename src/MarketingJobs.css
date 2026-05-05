@@ -433,6 +433,52 @@ html, body {
   font-weight: 600;
 }
 
+/* ====== DEVICE SYNC ====== */
+.mkt-sync {
+  margin-bottom: 16px;
+}
+
+.mkt-sync-panel {
+  margin-top: 10px;
+  padding: 14px;
+  background: rgba(124, 140, 248, 0.06);
+  border: 1px solid rgba(124, 140, 248, 0.2);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mkt-sync-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.mkt-sync-id {
+  font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: #c9d1ff;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.mkt-sync-status {
+  font-size: 14px;
+  color: #c9d1ff;
+  padding: 6px 0;
+}
+
+.mkt-sync-help {
+  margin: 0;
+  font-size: 12px;
+  color: #999;
+  line-height: 1.5;
+}
+
 /* ===== CARD ROW ===== */
 .mkt-card-row {
   display: flex;

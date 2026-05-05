@@ -1,7 +1,42 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./MarketingJobs.css";
 
 const API = "/.netlify/functions/marketing-jobs";
+const SYNC_API = "/.netlify/functions/sync-data";
+
+const VISITOR_COOKIE_NAME = "marketingVisitorId";
+
+const readCookie = (name) => {
+  const cookieName = `${name}=`;
+  const parts = document.cookie.split(";");
+  for (const part of parts) {
+    const item = part.trim();
+    if (item.startsWith(cookieName)) {
+      return decodeURIComponent(item.slice(cookieName.length));
+    }
+  }
+  return "";
+};
+
+const writeCookie = (name, value, days) => {
+  const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+};
+
+const createVisitorId = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+};
+
+const getOrCreateVisitorId = () => {
+  const existing = readCookie(VISITOR_COOKIE_NAME);
+  if (existing) return existing;
+  const nextId = createVisitorId();
+  writeCookie(VISITOR_COOKIE_NAME, nextId, 365 * 2);
+  return nextId;
+};
 
 const CATEGORIES = [
   { key: "marketing", label: "Marketing", pattern: /marketing|social media|seo|sem|\bcontent\b|brand|digital|kampány|kampany|kommunikáci/i },
@@ -124,6 +159,72 @@ const MarketingJobs = () => {
   const [appliedKeys, setAppliedKeys] = useState(() => loadAppliedKeys());
   const [showAppliedOnly, setShowAppliedOnly] = useState(false);
   const [appliedCache, setAppliedCache] = useState(() => loadAppliedCache());
+
+  const [syncOpen, setSyncOpen] = useState(false);
+  const [syncIdShown, setSyncIdShown] = useState(false);
+  const [syncStatus, setSyncStatus] = useState("");
+  const [importId, setImportId] = useState("");
+  const myVisitorId = useMemo(() => getOrCreateVisitorId(), []);
+
+  const handleSyncUpload = async () => {
+    setSyncStatus("Feltöltés…");
+    try {
+      const res = await fetch(SYNC_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          visitorId: myVisitorId,
+          data: {
+            clicked: [...clickedKeys],
+            applied: [...appliedKeys],
+            appliedCache,
+          },
+        }),
+      });
+      if (!res.ok) throw new Error();
+      setSyncStatus("✓ Feltöltve!");
+    } catch {
+      setSyncStatus("✗ Hiba történt.");
+    }
+  };
+
+  const handleSyncDownload = async () => {
+    if (!importId.trim()) return;
+    setSyncStatus("Letöltés…");
+    try {
+      const res = await fetch(`${SYNC_API}?visitorId=${encodeURIComponent(importId.trim())}`);
+      if (!res.ok) throw new Error();
+      const { data } = await res.json();
+      if (!data) { setSyncStatus("Nem találtam adatot."); return; }
+      if (Array.isArray(data.clicked)) {
+        const merged = new Set([...clickedKeys, ...data.clicked]);
+        setClickedKeys(merged);
+        localStorage.setItem(CLICKED_KEYS_STORAGE, JSON.stringify([...merged]));
+      }
+      if (Array.isArray(data.applied)) {
+        const merged = new Set([...appliedKeys, ...data.applied]);
+        setAppliedKeys(merged);
+        saveAppliedKeys(merged);
+      }
+      if (data.appliedCache && typeof data.appliedCache === "object") {
+        const merged = { ...data.appliedCache, ...appliedCache };
+        setAppliedCache(merged);
+        saveAppliedCache(merged);
+      }
+      setSyncStatus("✓ Összefésülve!");
+    } catch {
+      setSyncStatus("✗ Hiba történt.");
+    }
+  };
+
+  const handleCopySyncId = async () => {
+    try {
+      await navigator.clipboard.writeText(myVisitorId);
+      setSyncStatus("✓ ID másolva!");
+    } catch {
+      setSyncStatus("✗ Másolás sikertelen.");
+    }
+  };
 
   const trackClick = (target) => {
     setClickedKeys((prev) => {
@@ -369,6 +470,46 @@ const MarketingJobs = () => {
           </button>
         </div>
       </header>
+
+      {/* Sync */}
+      <div className="mkt-sync">
+        <button
+          className="mkt-sources-toggle"
+          onClick={() => setSyncOpen((v) => !v)}
+        >
+          {syncOpen ? "▲ Szinkron elrejtése" : "🔄 Szinkron eszközök között"}
+        </button>
+        {syncOpen && (
+          <div className="mkt-sync-panel">
+            <div className="mkt-sync-section">
+              <strong>A te szinkron ID-d:</strong>
+              <code className="mkt-sync-id">
+                {syncIdShown ? myVisitorId : "•••••••• (rejtett)"}
+              </code>
+              <button className="mkt-btn mkt-btn--toggle" onClick={() => setSyncIdShown((v) => !v)}>
+                {syncIdShown ? "Elrejtés" : "Mutatás"}
+              </button>
+              <button className="mkt-btn mkt-btn--toggle" onClick={handleCopySyncId}>📋 Másolás</button>
+              <button className="mkt-btn" onClick={handleSyncUpload}>⬆ Feltöltés</button>
+            </div>
+            <div className="mkt-sync-section">
+              <strong>Importálás másik eszközről:</strong>
+              <input
+                className="mkt-search"
+                placeholder="Másik eszköz szinkron ID-ja"
+                value={importId}
+                onChange={(e) => setImportId(e.target.value)}
+              />
+              <button className="mkt-btn" onClick={handleSyncDownload}>⬇ Letöltés és összefésülés</button>
+            </div>
+            {syncStatus && <div className="mkt-sync-status">{syncStatus}</div>}
+            <p className="mkt-sync-help">
+              ⚠️ Az ID-t senkinek ne add ki — aki ismeri, le tudja tölteni a megnézett és jelentkezett állásaid listáját.
+              Az importálás összefésüli az adatokat a meglevőkkel (nem felülírja).
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Categories */}
       <div className="mkt-sources-header">
